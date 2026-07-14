@@ -1,0 +1,23 @@
+# Solver output. A single dump_rounds 2 board is ~80MB and a full scenario is ~15GB,
+# so this must never enter history -- it is regenerable by generate_charts.py.
+resources/outputs/
+
+# Solver binaries and their bundled lookup tables, shipped with TexasSolver rather
+# than built here. card5_dic_sorted.txt alone is 50MB of hand-evaluation table.
+console_solver
+TexasSolverGui.app/
+resources/compairer/
+
+# Logs written by the solver and the batch runner.
+run_*.log
+solver_log.txt
+tmp_log.txt
+log.txt
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Editors / OS
+.idea/
+.DS_Store
