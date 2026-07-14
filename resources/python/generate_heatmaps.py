@@ -90,6 +90,41 @@ def board_from_filename(json_path):
     return board if 3 <= len(board) <= 5 else []
 
 
+# Postflop action opens with the first player left of the button, so this is the order
+# seats act in after the flop -- not the preflop order. Whichever of the two seats comes
+# first here is OOP, which is why the SB, despite being the raiser, is OOP against the BB.
+POSTFLOP_ORDER = ['SB', 'BB', 'UTG', 'MP', 'CO', 'BTN']
+
+
+def scenario_of(json_path):
+    """'.../programmatic/BTN_vs_BB/9h_6d_4c.json' -> 'BTN_vs_BB'.
+
+    Solves are filed under a directory per scenario, so the preflop action a solve came
+    from is its parent folder. Older solves carried it as a filename prefix instead, so
+    fall back to that.
+    """
+    parent = os.path.basename(os.path.dirname(os.path.abspath(json_path)))
+    if re.fullmatch(r'[A-Z]{2,3}_vs_[A-Z]{2,3}', parent):
+        return parent
+    m = re.match(r'([A-Z]{2,3}_vs_[A-Z]{2,3})_', os.path.basename(json_path))
+    return m.group(1) if m else ''
+
+
+def seats_of(json_path):
+    """{1: 'BB', 0: 'BTN'} for a BTN_vs_BB solve: which seat each player number is.
+
+    Player 1 acts first on the flop and is therefore OOP, player 0 is IP. Deriving the
+    seats from postflop order rather than from who raised keeps SB_vs_BB right: the BB
+    has position on the SB.
+    """
+    scenario = scenario_of(json_path)
+    if not scenario:
+        return {}
+    seats = sorted(scenario.split('_vs_'), key=lambda s: POSTFLOP_ORDER.index(s)
+                   if s in POSTFLOP_ORDER else len(POSTFLOP_ORDER))
+    return {1: seats[0], 0: seats[1]}
+
+
 def infer_board(strategy_dict):
     """Fallback: the board cards are the ones no combo in the range can contain.
 
@@ -346,13 +381,19 @@ def render_node(node, json_path, output_image, path=(), range_weights=None):
     n_combos = int(present.sum())
     # Player 1 acts first on the flop, i.e. is out of position; player 0 is in position.
     seat = {1: 'OOP', 0: 'IP'}.get(player, f'player {player}')
+    position = seats_of(json_path).get(player)
+    if position:
+        seat = f"{seat} ({position})"
     subtitle = f"{describe_path(list(path))}  ·  {seat} to act  ·  {n_combos} combos"
     if board:
         subtitle = f"board {' '.join(board)}  ·  {subtitle}"
     if range_weights:
         # The opacity channel carries meaning, so it has to be spelled out.
         subtitle += "\nfaded = hand played only part of the time (opacity = range frequency)"
-    ax.set_title(f"{os.path.basename(json_path)}\n{subtitle}", loc='left', fontsize=11)
+    # The scenario is the folder now, not the filename, so name it in the title -- an
+    # image lifted out of its directory would otherwise not say which preflop spot it is.
+    title = ' / '.join(x for x in (scenario_of(json_path), os.path.basename(json_path)) if x)
+    ax.set_title(f"{title}\n{subtitle}", loc='left', fontsize=11)
 
     plt.savefig(output_image, dpi=150, bbox_inches='tight')
     plt.close()
@@ -376,7 +417,8 @@ def heatmap_tree(json_path, output_dir, flop_only=True):
         print(f"  no config next to {os.path.basename(json_path)}; drawing unweighted")
 
     stem = os.path.splitext(os.path.basename(json_path))[0]
-    board_dir = os.path.join(output_dir, stem)
+    # Mirror the scenario folder the solve lives in: heatmaps/BTN_vs_BB/9h_6d_4c/.
+    board_dir = os.path.join(output_dir, scenario_of(json_path), stem)
     os.makedirs(board_dir, exist_ok=True)
 
     count = 0
@@ -393,11 +435,20 @@ def heatmap_tree(json_path, output_dir, flop_only=True):
     print(f"{stem}: {count} decision nodes -> {board_dir}")
 
 
-def batch_heatmaps(input_dir, output_dir):
+def batch_heatmaps(input_dir, output_dir, only=None):
+    """Render every solve under input_dir, which is one directory per scenario.
+
+    Walks rather than lists: the solves sit in scenario subfolders now.
+    """
     os.makedirs(output_dir, exist_ok=True)
-    for file in sorted(os.listdir(input_dir)):
-        if file.endswith(".json"):
-            heatmap_tree(os.path.join(input_dir, file), output_dir)
+    for root, _, files in sorted(os.walk(input_dir)):
+        for file in sorted(files):
+            if not file.endswith(".json"):
+                continue
+            json_path = os.path.join(root, file)
+            if only and scenario_of(json_path) not in only:
+                continue
+            heatmap_tree(json_path, output_dir)
 
 
 if __name__ == "__main__":
@@ -410,6 +461,8 @@ if __name__ == "__main__":
     parser.add_argument('--full', action='store_true',
                         help="also render turn nodes (~5000 images for one board -- "
                              "only sensible for a single solve)")
+    parser.add_argument('--scenario', nargs='*',
+                        help="limit a batch run to these scenarios, e.g. --scenario BTN_vs_BB")
     parser.add_argument('--out', default="resources/outputs/heatmaps")
     args = parser.parse_args()
 
@@ -419,4 +472,4 @@ if __name__ == "__main__":
     elif args.full:
         parser.error("--full needs a specific json; the whole batch would be millions of images")
     else:
-        batch_heatmaps("resources/outputs/programmatic", args.out)
+        batch_heatmaps("resources/outputs/programmatic", args.out, only=args.scenario)

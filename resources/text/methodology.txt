@@ -1,0 +1,19 @@
+### Methodology: Programmatic GTO Chart Generation
+
+#### Professional Standard Flop Subsets
+The simulation utilizes a standard 184-flop subset, a professional benchmark established by PioSolver. This subset was developed by solving all 1755 strategically distinct flops in No-Limit Hold'em and identifying a smaller collection that accurately represents the entire game's strategic complexity.
+
+Key characteristics of this approach:
+- **Strategic Representation:** The 184 flops cover various textures, including monotone, paired, high-card, and connected boards, ensuring broad coverage of possible scenarios.
+- **EV Accuracy:** These subsets are used by industry-leading tools like GTO Wizard to calculate pre-flop EVs and aggregate reports with high precision.
+- **Weighting:** Each flop in the subset is assigned a weight representing its relative frequency in the full 1755-flop space.
+
+#### Automation Workflow
+The project automates the solver via `resources/python/generate_charts.py`:
+1.  **Range Mapping:** Loads pre-flop ranges from `ranges/qb_ranges/`.
+2.  **Batch Processing:** Iterates through all 184 flops for each specified player matchup.
+3.  **Solver Execution:** Programmatically generates input scripts for `console_solver` and manages sequential execution.
+4.  **Strategy Output:** Dumps full GTO strategy trees to JSON for further analysis and chart creation.
+
+#### 3-Way Approximation
+While the current solver engine is optimized for heads-up (2-way) scenarios, multi-way strategies are approximated by solving for the two most active players in the pot, adjusting their ranges to reflect the presence of a third player.

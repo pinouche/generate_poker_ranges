@@ -103,6 +103,37 @@ def load_range(file_path):
     with open(file_path, 'r') as f:
         return f.read().strip()
 
+
+def write_scenario_note(scenario_dir, scenario, range_base):
+    """Drop a scenario.txt in the folder saying which preflop action these solves are.
+
+    The solver config records only the pot, the stack and two anonymous range strings --
+    nothing about how the hand got here. Six months from now the folder name alone will
+    not tell you whether SB_vs_BB has the SB in or out of position, so write it down
+    next to the results rather than leaving it to be reconstructed from the pot size.
+    """
+    # The range file lives under the folder of the seat that holds it, e.g. BB/... is
+    # the BB's range, so the seat is just the first path component -- no need to guess
+    # it from the scenario name, which does not say who ended up out of position.
+    oop_seat = scenario["oop"].split("/")[0]
+    ip_seat = scenario["ip"].split("/")[0]
+    note = f"""{scenario['name']}
+
+Preflop:  {scenario['preflop']}
+Flop pot: {scenario['pot']}bb
+Stacks:   {scenario['stack']}bb behind (SPR {scenario['stack'] / scenario['pot']:.1f})
+
+OOP (acts first on the flop): {oop_seat}
+  range: {scenario['oop']}
+IP  (acts last on the flop):  {ip_seat}
+  range: {scenario['ip']}
+
+Ranges are from {range_base}.
+Each {{board}}.json here is one solve; the {{board}}.txt beside it is the config that produced it.
+"""
+    with open(os.path.join(scenario_dir, "scenario.txt"), 'w') as f:
+        f.write(note)
+
 def process_clusters(only=None):
     range_base = "ranges/qb_ranges/100bb 2.5x 500rake"
     output_base = "resources/outputs/programmatic"
@@ -131,14 +162,17 @@ def process_clusters(only=None):
     # these wrong tilts the entire solve.
     scenarios = [
         {"name": "BTN_vs_BB",
+         "preflop": "folds to BTN, BTN opens 2.5bb, SB folds, BB calls",
          "ip":  "BTN/BTN_2.5bb.txt",
          "oop": "BB/BTN_2.5bb_BB_Call.txt",
          "pot": 5.5, "stack": 97.5},
         {"name": "CO_vs_BB",
+         "preflop": "folds to CO, CO opens 2.5bb, BTN and SB fold, BB calls",
          "ip":  "CO/CO_2.5bb.txt",
          "oop": "BB/CO_2.5bb_BB_Call.txt",
          "pot": 5.5, "stack": 97.5},
         {"name": "SB_vs_BB",
+         "preflop": "folds to SB, SB opens 3.0bb, BB calls",
          "ip":  "BB/SB_3.0bb_BB_Call.txt",   # the BB has position on the SB
          "oop": "SB/SB_3.0bb.txt",
          "pot": 6.0, "stack": 97.0},
@@ -149,30 +183,42 @@ def process_clusters(only=None):
         if not scenarios:
             raise SystemExit(f"no scenario matching {only}")
 
+    # Each scenario gets its own directory, so a solve is never ambiguous about the
+    # preflop action it came from: resources/outputs/programmatic/BTN_vs_BB/9h_6d_4c.json.
+    def out_path(s_name, board):
+        return os.path.join(output_base, s_name, f"{board.replace(',', '_')}.json")
+
     solve_times = []
     failures = []
     retried = []
-    total_solves = len(flops) * len(scenarios)
-    print(f"Scenarios: {', '.join(s['name'] for s in scenarios)}  ({total_solves} solves)")
+    # Boards that already have a result are skipped below, so they must not count
+    # towards the ETA -- on a resumed run that would inflate it by the work we did last time.
+    total_solves = sum(1 for s in scenarios for _, board in flops
+                       if not os.path.exists(out_path(s["name"], board)))
+    print(f"Scenarios: {', '.join(s['name'] for s in scenarios)}  ({total_solves} solves to run)")
 
     for scenario in scenarios:
         s_name = scenario["name"]
-        print(f"\nProcessing Scenario: {s_name}")
-        
+        print(f"\nProcessing Scenario: {s_name}  ({scenario['preflop']})")
+
         ip_path = os.path.join(range_base, scenario["ip"])
         oop_path = os.path.join(range_base, scenario["oop"])
-        
+
         if not os.path.exists(ip_path) or not os.path.exists(oop_path):
             print(f"  Missing range files for {s_name}, skipping.")
             continue
-            
+
         range_ip = load_range(ip_path)
         range_oop = load_range(oop_path)
 
+        scenario_dir = os.path.join(output_base, s_name)
+        os.makedirs(scenario_dir, exist_ok=True)
+        write_scenario_note(scenario_dir, scenario, range_base)
+
         for i, (weight, board) in enumerate(flops):
             board_slug = board.replace(",", "_")
-            out_file = os.path.join(output_base, f"{s_name}_{board_slug}.json")
-            script_file = os.path.join(output_base, f"{s_name}_{board_slug}.txt")
+            out_file = out_path(s_name, board)
+            script_file = os.path.join(scenario_dir, f"{board_slug}.txt")
 
             # Skip if already solved to allow resuming
             if os.path.exists(out_file):

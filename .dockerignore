@@ -1,0 +1,10 @@
+# The solves are tens of GB and the API never reads them.
+resources/outputs/
+resources/gametree/
+resources/text/
+resources/bash/
+ranges/6max_range/
+ranges/PioRanges_nlhe_100bb_3x_NL200/
+*.log
+.git/
+__pycache__/
