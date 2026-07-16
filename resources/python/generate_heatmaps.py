@@ -95,19 +95,25 @@ def board_from_filename(json_path):
 # first here is OOP, which is why the SB, despite being the raiser, is OOP against the BB.
 POSTFLOP_ORDER = ['SB', 'BB', 'UTG', 'MP', 'CO', 'BTN']
 
+# A scenario folder is <aggressor>_vs_<caller>, optionally with a suffix naming the
+# preflop line: BTN_vs_BB, but also BB_vs_BTN_3bet. Only the seat pair is captured --
+# the suffix distinguishes two pots between the same two seats, and says nothing about
+# who is OOP.
+SCENARIO_RE = r'([A-Z]{2,3})_vs_([A-Z]{2,3})(?:_[A-Za-z0-9]+)*'
+
 
 def scenario_of(json_path):
-    """'.../programmatic/BTN_vs_BB/9h_6d_4c.json' -> 'BTN_vs_BB'.
+    """'.../programmatic/BB_vs_BTN_3bet/9h_6d_4c.json' -> 'BB_vs_BTN_3bet'.
 
     Solves are filed under a directory per scenario, so the preflop action a solve came
     from is its parent folder. Older solves carried it as a filename prefix instead, so
     fall back to that.
     """
     parent = os.path.basename(os.path.dirname(os.path.abspath(json_path)))
-    if re.fullmatch(r'[A-Z]{2,3}_vs_[A-Z]{2,3}', parent):
+    if re.fullmatch(SCENARIO_RE, parent):
         return parent
-    m = re.match(r'([A-Z]{2,3}_vs_[A-Z]{2,3})_', os.path.basename(json_path))
-    return m.group(1) if m else ''
+    m = re.match(SCENARIO_RE + r'_', os.path.basename(json_path))
+    return m.group(0)[:-1] if m else ''
 
 
 def seats_of(json_path):
@@ -115,12 +121,15 @@ def seats_of(json_path):
 
     Player 1 acts first on the flop and is therefore OOP, player 0 is IP. Deriving the
     seats from postflop order rather than from who raised keeps SB_vs_BB right: the BB
-    has position on the SB.
+    has position on the SB -- and keeps it right in the 3bet pots too, where the SB is
+    OOP whether it was the one that 3bet (SB_vs_BTN_3bet) or the one that called
+    (BB_vs_SB_3bet).
     """
     scenario = scenario_of(json_path)
     if not scenario:
         return {}
-    seats = sorted(scenario.split('_vs_'), key=lambda s: POSTFLOP_ORDER.index(s)
+    m = re.match(SCENARIO_RE, scenario)
+    seats = sorted(m.groups(), key=lambda s: POSTFLOP_ORDER.index(s)
                    if s in POSTFLOP_ORDER else len(POSTFLOP_ORDER))
     return {1: seats[0], 0: seats[1]}
 

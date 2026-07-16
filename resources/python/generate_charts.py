@@ -148,34 +148,67 @@ def process_clusters(only=None):
     flops = load_flops(flop_list_path)
     print(f"Loaded {len(flops)} flops for simulation.")
 
-    # Single-raised pots where the BB defends by calling.
+    # Every heads-up postflop spot in a 3-handed game (BTN, SB, BB), at 100bb, no ante.
     #
-    # `ip` is whoever acts LAST after the flop, which is not always the preflop raiser:
-    # postflop action opens with the first player left of the button, so against a BB
-    # caller the BTN and CO have position -- but the SB does not. The SB is the one
-    # raiser here who plays the whole hand out of position, with the BB behind them.
+    # There is no CO/MP/UTG seat, so the only preflop openers are the BTN and the SB, and
+    # the only two single-raised pots are the first two below. Notably there is NO
+    # BTN-open-SB-call pot: facing a BTN open the SB is out of position with the BB still
+    # to act, and the ranges give it only a 3bet or a fold (there is no
+    # SB/BTN_2.5bb_SB_Call.txt). The BTN and the SB meet postflop only in a 3bet pot.
     #
-    # Pot and stack are per-scenario because they differ. A 2.5bb open called by the BB
-    # leaves 2.5 + 2.5 + the SB's dead 0.5 = 5.5bb in the middle and 97.5bb behind;
-    # an SB open has no dead money and is 3 + 3 = 6bb with 97bb behind. Pot and stack
-    # fix the SPR, and every bet size in the tree is a fraction of the pot, so getting
-    # these wrong tilts the entire solve.
+    # `name` is <aggressor>_vs_<caller>, but that is a label, not the geometry: `ip` is
+    # whoever acts LAST after the flop, which is decided purely by seat order (SB, then
+    # BB, then BTN) and not by who raised. So the SB is OOP even when it is the aggressor,
+    # and the BB has position on it -- in both the single-raised and the 3bet pot.
+    #
+    # Pot and stack are per-scenario and are not interchangeable. They fix the SPR, and
+    # every bet size in the tree is a fraction of the pot, so getting them wrong tilts the
+    # whole solve. Each is (money in the middle) / (100bb minus what each player put in):
+    #
+    #   BTN opens 2.5, SB folds, BB calls   2.5 + 2.5 + SB's dead 0.5 = 5.5    97.5 behind
+    #   SB opens 3.0, BB calls              3 + 3, no dead money      = 6.0    97.0 behind
+    #   BTN opens 2.5, SB folds, BB 3bets
+    #     to 11, BTN calls                  11 + 11 + dead 0.5        = 22.5   89.0 behind
+    #   BTN opens 2.5, SB 3bets to 11,
+    #     BB folds, BTN calls               11 + 11 + BB's dead 1.0   = 23.0   89.0 behind
+    #   BTN folds, SB opens 3.0, BB 3bets
+    #     to 9, SB calls                    9 + 9, no dead money      = 18.0   91.0 behind
+    #
+    # The 3bet pots run at SPR ~4-5 rather than ~17, which makes their trees far smaller
+    # and their solves correspondingly cheaper than the single-raised ones.
+    #
+    # A 3bettor's flop range is just its 3bet range: the caller calling does not filter it,
+    # and there is no 4bet on these lines. Hence the aggressor's range file here is the
+    # plain 3bet range, while the caller's is the explicit ..._Call.txt.
     scenarios = [
+        # --- single-raised pots (SPR ~17) ---
         {"name": "BTN_vs_BB",
-         "preflop": "folds to BTN, BTN opens 2.5bb, SB folds, BB calls",
+         "preflop": "BTN opens 2.5bb, SB folds, BB calls",
          "ip":  "BTN/BTN_2.5bb.txt",
          "oop": "BB/BTN_2.5bb_BB_Call.txt",
          "pot": 5.5, "stack": 97.5},
-        {"name": "CO_vs_BB",
-         "preflop": "folds to CO, CO opens 2.5bb, BTN and SB fold, BB calls",
-         "ip":  "CO/CO_2.5bb.txt",
-         "oop": "BB/CO_2.5bb_BB_Call.txt",
-         "pot": 5.5, "stack": 97.5},
         {"name": "SB_vs_BB",
-         "preflop": "folds to SB, SB opens 3.0bb, BB calls",
+         "preflop": "BTN folds, SB opens 3.0bb, BB calls",
          "ip":  "BB/SB_3.0bb_BB_Call.txt",   # the BB has position on the SB
          "oop": "SB/SB_3.0bb.txt",
          "pot": 6.0, "stack": 97.0},
+
+        # --- 3bet pots (SPR ~4-5) ---
+        {"name": "BB_vs_BTN_3bet",
+         "preflop": "BTN opens 2.5bb, SB folds, BB 3bets to 11bb, BTN calls",
+         "ip":  "BTN/vs_3bet/BTN_2.5bb_BB_11.0bb_BTN_Call.txt",
+         "oop": "BB/BTN_2.5bb_BB_11.0bb.txt",
+         "pot": 22.5, "stack": 89.0},
+        {"name": "SB_vs_BTN_3bet",
+         "preflop": "BTN opens 2.5bb, SB 3bets to 11bb, BB folds, BTN calls",
+         "ip":  "BTN/vs_3bet/BTN_2.5bb_SB_11.0bb_BTN_Call.txt",
+         "oop": "SB/BTN_2.5bb_SB_11.0bb.txt",
+         "pot": 23.0, "stack": 89.0},
+        {"name": "BB_vs_SB_3bet",
+         "preflop": "BTN folds, SB opens 3.0bb, BB 3bets to 9bb, SB calls",
+         "ip":  "BB/SB_3.0bb_BB_9.0bb.txt",  # the BB 3bets and still has position
+         "oop": "SB/vs_3bet/SB_3.0bb_BB_9.0bb_SB_Call.txt",
+         "pot": 18.0, "stack": 91.0},
     ]
 
     if only:

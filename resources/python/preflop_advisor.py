@@ -94,16 +94,20 @@ def check_seating(state, seats, sb, bb):
     stop -- advising confidently from the wrong seat is worse than not advising.
 
     Only checkable before anyone raises; a player who has already acted has bet over their
-    blind, and we cannot tell what they posted.
+    blind, and we cannot tell what they posted. A blind sitting at MORE than their post is
+    fine (the SB completing to the bb is a limp, handled later); less is impossible in a
+    legal hand, so it can only mean the seats are wrong. Folded players are skipped: some
+    tables zero a folded blind's bet, and dead chips prove nothing about seating.
     """
-    posted = {seats[p]: state[p]['bet'] for p in TABLE_ORDER}
+    posted = {seats[p]: state[p]['bet'] for p in TABLE_ORDER if state[p].get('active', True)}
     if any(v > bb + 1e-9 for v in posted.values()):
         return   # someone has raised; blinds are no longer visible in the bets
-    if abs(posted['SB'] - sb) > 1e-9 or abs(posted['BB'] - bb) > 1e-9:
+    if posted.get('SB', sb) + 1e-9 < sb or posted.get('BB', bb) + 1e-9 < bb:
         raise Unsupported(
             f"seating does not match the blinds: with {state['dealer']} on the button, "
-            f"the SB seat bet {posted['SB']:g} and the BB seat bet {posted['BB']:g}, "
-            f"but the blinds are {sb:g}/{bb:g}. Is villain_left really on hero's left?")
+            f"the SB seat bet {posted.get('SB', 0):g} and the BB seat bet "
+            f"{posted.get('BB', 0):g}, but the blinds are {sb:g}/{bb:g}. "
+            f"Is villain_left really on hero's left?")
 
 
 def actions_so_far(state, seats, bb):
@@ -120,18 +124,29 @@ def actions_so_far(state, seats, bb):
     live = [(seats[p], state[p]) for p in TABLE_ORDER if state[p].get('active', True)]
     top = max(pl['bet'] for _, pl in live)
 
-    raisers = sorted([(seat, pl['bet']) for seat, pl in live
-                      if pl['bet'] > bb + 1e-9], key=lambda x: x[1])
+    raisers = sorted([(seat, pl) for seat, pl in live
+                      if pl['bet'] > bb + 1e-9], key=lambda x: x[1]['bet'])
     if not raisers:
         if top > bb + 1e-9:
             raise Unsupported("a bet exceeds the blind but no raiser found")
+        # A non-BB player sitting at exactly the big blind has voluntarily completed to it
+        # without raising -- a limp. The charts are raise-or-fold and have no limp branches,
+        # so this is a real spot we cannot answer, not the fold-round-to-hero case below.
+        # (The BB is naturally at bb from posting, so only the others betray a limp.)
+        if any(seat != 'BB' and pl['bet'] > bb - 1e-9 for seat, pl in live):
+            raise Unsupported(
+                "limped pot: a player completed to the big blind rather than raising, and "
+                "these charts have no limp branches")
         return []   # folded round to the button: nobody has voluntarily put money in
 
-    seq = [(seat, f"{bet / bb:.1f}bb") for seat, bet in raisers]
+    # A raiser with nothing behind has shoved, and the charts name that node 'AllIn'
+    # rather than by its size -- the size is whatever the stack happened to be.
+    seq = [(seat, 'AllIn' if pl['stack'] < 1e-9 else f"{pl['bet'] / bb:.1f}bb")
+           for seat, pl in raisers]
 
     # Anyone at the top bet who is not the last raiser has called it. Earlier raisers who
     # then called a re-raise are visible the same way: their bet was topped up to match.
-    last_raiser, last_bet = raisers[-1]
+    last_raiser, last_bet = raisers[-1][0], raisers[-1][1]['bet']
     for seat, pl in live:
         if seat == last_raiser:
             continue
@@ -162,6 +177,22 @@ def load_charts(seat):
             if seq:
                 charts.append((seq, os.path.join(root, f)))
     return charts
+
+
+def snapshot_line(seq):
+    """A chart line as the bets in front of the players would show it.
+
+    The snapshot keeps only each player's final state: a re-raise overwrites the same
+    player's earlier raise (the chart stem 'BTN_2.5bb_SB_11.0bb_BTN_24.0bb' leaves BTN's
+    chips at 24bb, the 2.5bb is gone), and a fold leaves nothing visible at all. Collapsing
+    the chart lines this way makes them comparable with actions_so_far's reconstruction --
+    including hero's own earlier raises, which are as much a part of the line as anyone's.
+    """
+    last = {}
+    for i, (seat, _) in enumerate(seq):
+        last[seat] = i
+    return [(seat, act) for i, (seat, act) in enumerate(seq)
+            if last[seat] == i and act != 'FOLD']
 
 
 def is_raise(action):
@@ -226,20 +257,20 @@ def advise(state, bb_override=None):
     hero_seat = seats['hero']
     hand = hand_class(state['hero']['cards'])
     bb = big_blind(state, seats, bb_override)
-    sb = float(state.get('small_blind', bb / 2))
+    # `or` rather than a .get default: the API sends small_blind explicitly as null
+    # when the table omits it, and float(None) is a crash, not a fallback.
+    sb = float(state.get('small_blind') or bb / 2)
     check_seating(state, seats, sb, bb)
     prior = actions_so_far(state, seats, bb)
 
-    # Hero's own action is the one we are choosing, so it must not already be in the line.
-    prior = [(seat, act) for seat, act in prior if seat != hero_seat]
-
     charts = load_charts(hero_seat)
-    # The option set: every chart whose line is exactly the action so far plus one more
-    # action, taken by hero.
-    options = [(seq, path) for seq, path in charts
-               if len(seq) == len(prior) + 1
-               and seq[-1][0] == hero_seat
-               and same_shape(seq[:-1], prior)]
+    # The option set: every chart whose line -- seen the way a snapshot shows it, each
+    # player's final action only -- is exactly the action so far plus one more action,
+    # taken by hero. Hero's earlier raises stay in: facing a 3-bet, the chart stem
+    # starts with hero's own open.
+    options = [(seq, snapshot_line(seq[:-1]), path) for seq, path in charts
+               if seq[-1][0] == hero_seat]
+    options = [(seq, vis, path) for seq, vis, path in options if same_shape(vis, prior)]
     if not options:
         raise Unsupported(
             f"no chart covers {hero_seat} facing "
@@ -247,11 +278,12 @@ def advise(state, bb_override=None):
 
     # Several sizings of the same line may match (e.g. a 2.5bb and a 3bb open); take the
     # chart whose sizes are closest to the table's, and report how far off it was.
-    best = min(size_distance(seq[:-1], prior) for seq, _ in options)
-    options = [(seq, path) for seq, path in options
-               if size_distance(seq[:-1], prior) == best]
+    best = min(size_distance(vis, prior) for _, vis, _ in options)
+    options = [(seq, vis, path) for seq, vis, path in options
+               if size_distance(vis, prior) == best]
 
-    strategy = sorted(((seq[-1][1], read_weight(path, hand), path) for seq, path in options),
+    strategy = sorted(((seq[-1][1], read_weight(path, hand), path)
+                       for seq, _, path in options),
                       key=lambda x: -x[1])
     top = max(state[p]['bet'] for p in TABLE_ORDER if state[p].get('active', True))
     stack_bb = state['hero']['stack'] / bb

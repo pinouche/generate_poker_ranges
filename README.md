@@ -1,53 +1,83 @@
 # generate_poker_ranges
 
-Precomputed GTO postflop strategies for single-raised pots, solved with
-[TexasSolver](https://github.com/bupticybee/TexasSolver) (`console_solver`) and rendered
-as 13x13 range heatmaps.
+Precomputed GTO postflop strategies for **3-handed** (BTN / SB / BB) 100bb cash, solved
+with [TexasSolver](https://github.com/bupticybee/TexasSolver) (`console_solver`) and
+rendered as 13x13 range heatmaps.
 
 The goal is a **lookup table you can use while playing**: given a board and a betting
 line, read off the strategy without solving anything at the table.
 
+## Scenarios
+
+The five below are **every heads-up postflop spot a 3-handed game reaches**: two
+single-raised pots and three 3bet pots.
+
+**IP is whoever acts last after the flop, and that is decided by seat order (SB, then BB,
+then BTN) — not by who raised.** So the SB is out of position in all three of the pots it
+plays, whether it was the aggressor or the caller.
+
+| scenario | preflop | OOP (acts first) | IP (has position) | pot | stack | SPR |
+|---|---|---|---|---|---|---|
+| `BTN_vs_BB` | BTN opens 2.5bb, SB folds, BB calls | BB | BTN | 5.5bb | 97.5bb | 17.7 |
+| `SB_vs_BB` | BTN folds, SB opens 3.0bb, BB calls | **SB** | **BB** | 6.0bb | 97.0bb | 16.2 |
+| `BB_vs_BTN_3bet` | BTN opens 2.5bb, SB folds, BB 3bets to 11bb, BTN calls | BB | BTN | 22.5bb | 89.0bb | 4.0 |
+| `SB_vs_BTN_3bet` | BTN opens 2.5bb, SB 3bets to 11bb, BB folds, BTN calls | **SB** | BTN | 23.0bb | 89.0bb | 3.9 |
+| `BB_vs_SB_3bet` | BTN folds, SB opens 3.0bb, BB 3bets to 9bb, SB calls | **SB** | **BB** | 18.0bb | 91.0bb | 5.1 |
+
+**There is no BTN-open, SB-call pot.** Facing a BTN open the SB is out of position with the
+BB still to act, and the ranges give it only a 3bet or a fold — so the BTN and the SB meet
+after the flop only in a 3bet pot. That is why `SB_vs_BTN_3bet` is here and a
+`BTN_vs_SB` single-raised pot is not.
+
+Pot and stack are per-scenario and are **not** interchangeable. Each is (money in the
+middle) / (100bb minus what each player put in), and the dead blind money matters: a 2.5bb
+BTN open called by the BB leaves `2.5 + 2.5 + the SB's dead 0.5 = 5.5bb`, while an SB open
+has no dead money at all (`3 + 3 = 6bb`). Pot and stack fix the SPR, and every bet size in
+the tree is a fraction of the pot.
+
 ## Run options
 
 Per-solve cost is measured on `As Ad Ks`, 16 threads, `set_dump_rounds 2`, 150 iterations.
+All 186 flops in the subset are run per scenario.
 
-| option | scenarios | solves | time | disk | betting tree |
-|---|---|---|---|---|---|
-| **1** | BTN vs BB | 186 | **~9 h** | ~15 GB | trimmed — single 75% bet on turn & river |
-| **2** | BTN, CO, SB vs BB | 558 | **~27 h** | ~43 GB | trimmed — single 75% bet on turn & river |
-| **3** | BTN, CO, SB vs BB | 558 | **~58 h** | ~72 GB | full — 50%/100% bets + raise on every street |
+| option | scenarios | solves | time | disk |
+|---|---|---|---|---|
+| **1** | `BTN_vs_BB` only | 186 | **~9 h** | ~15 GB |
+| **2** | both single-raised pots | 372 | **~18 h** | ~29 GB |
+| **3** | all five (adds the 3bet pots) | 930 | ~18 h **+ the 3bet pots** | ~29 GB + |
 
-Options 1 and 2 use the trimmed tree: **174 s** and **79 MB** per solve. Option 3 keeps the
-original tree: **375 s** and **128 MB** per solve. Trimming is 2.2x faster and 38% smaller;
-what it costs is turn/river bet-size granularity — you can no longer represent a choice
+The single-raised pots cost **174 s** and **79 MB** per solve on the trimmed betting tree
+(single 75% bet on turn and river). The full tree — 50%/100% bets plus a raise on every
+street — costs 375 s and 128 MB instead; trimming is 2.2x faster and 38% smaller, and what
+it buys back is turn/river bet-size granularity, so you can no longer represent a choice
 between a polarized 100%-pot bet and a 50% one.
 
-All options dump the **flop and turn** (`set_dump_rounds 2`). All are resumable: a board
+**The 3bet pots have not been timed yet**, but they run at SPR ~4-5 rather than ~17, which
+makes their trees far smaller — expect them to be materially cheaper per solve than the
+numbers above, not equal to them. They are also the place where the trimmed tree costs
+least, since there is little room left to manoeuvre postflop.
+
+All options dump the **flop and turn** (`set_dump_rounds 2`) and are resumable: a board
 whose `.json` already exists is skipped, so you can stop and restart, or add a scenario
 later without re-solving what is already on disk.
 
 ```sh
-python3 resources/python/generate_charts.py BTN_vs_BB          # option 1
-python3 resources/python/generate_charts.py                    # option 2 (all scenarios)
+python3 resources/python/generate_charts.py BTN_vs_BB               # option 1
+python3 resources/python/generate_charts.py BTN_vs_BB SB_vs_BB      # option 2
+python3 resources/python/generate_charts.py                         # option 3 (everything)
 ```
 
-## Scenarios
+## Ranges
 
-All three are single-raised pots where the BB defends by calling. **IP is whoever acts
-last after the flop, which is not always the preflop raiser** — postflop action opens with
-the first player left of the button, so the BTN and CO have position on a BB caller, but
-the SB does not. The SB is the one raiser who plays the hand out of position.
+The charts in `ranges/qb_ranges/100bb 2.5x 500rake` are 6-max solves, but the nodes used
+here transfer: "folded to the BTN" in 6-max has the **same two players left to act** (SB,
+BB) at the same blinds and stacks as a BTN open 3-handed, so it is the same game. The one
+discrepancy is the bunching effect — the players who folded in the 6-max tree were holding
+disproportionately weak cards, so the remaining deck is not quite the one a 3-handed table
+draws from. It is a small distortion and it washes out almost entirely postflop, but if you
+have true 3-handed charts, prefer them.
 
-| scenario | preflop | OOP (acts first) | IP (has position) | pot | stack |
-|---|---|---|---|---|---|
-| `BTN_vs_BB` | BTN opens 2.5bb, BB calls | BB | BTN | 5.5bb | 97.5bb |
-| `CO_vs_BB` | CO opens 2.5bb, BB calls | BB | CO | 5.5bb | 97.5bb |
-| `SB_vs_BB` | SB opens 3.0bb, BB calls | **SB** | **BB** | 6.0bb | 97.0bb |
-
-Pot and stack differ per scenario and are not interchangeable: a 2.5bb open called by the
-BB leaves `2.5 + 2.5 + the SB's dead 0.5 = 5.5bb` in the middle with 97.5bb behind, while
-an SB open has no dead money (`3 + 3 = 6bb`, 97bb behind). Pot and stack fix the SPR, and
-every bet size in the tree is a fraction of the pot.
+These ranges also assume **no ante**. With an ante every pot in the table above is wrong.
 
 ## Flop subset
 
@@ -130,10 +160,12 @@ range only holds part of the time; the opacity is that frequency. Ranges are rea
 `.txt` config next to the json, per player — the two players alternate down the tree, so a
 single range file is wrong at half the nodes.
 
-## Preflop advisor (API)
+## Advisor (API)
 
-Preflop needs no solve — it is a lookup in the charts. `preflop_advisor.py` takes a live
-game state and reads the chart that covers it; `api.py` is the same thing behind HTTP.
+One endpoint answers every street the data covers. Preflop is a lookup in the charts
+(`preflop_advisor.py`); the flop and the turn are read out of the solved trees above
+(`postflop_advisor.py`). `api.py` is both behind HTTP — the `street` field routes the
+request. The river is solved but not dumped, so it is a 422.
 
 ### Docker
 
@@ -152,8 +184,9 @@ reads them. Interactive docs are at `localhost:8000/docs`, health at `/health`.
 ### Without Docker
 
 ```sh
-uvicorn api:app --app-dir resources/python --reload    # same API on :8000
-python3 resources/python/preflop_advisor.py state.json # or straight from the CLI
+uvicorn api:app --app-dir resources/python --reload     # same API on :8000
+python3 resources/python/preflop_advisor.py state.json  # preflop, straight from the CLI
+python3 resources/python/postflop_advisor.py state.json # flop/turn, same json
 ```
 
 ### The request and the answer
@@ -181,9 +214,14 @@ schema can grow without breaking it):
 `chips` is the number to act on, `kind` is machine-readable, and mixed strategies come back
 as frequencies with `pure: false` rather than being rounded to a single action.
 
-**A spot the charts do not cover is a 422, not a 500** — a postflop street, a limped pot, a
-seating the pack has no chart for. That is a real answer ("no chart here"), and the client
-has to be able to tell it apart from the server being broken.
+Postflop the answer has the same shape, with two more `kind`s (`CHECK`, `BET`), and the
+`action_so_far` names the whole line the state implies, e.g.
+`"BTN opens 2.5bb, SB folds, BB calls | flop Kh 5d 2d: BB CHECK -> BTN BET 4 (2bb)"`.
+
+**A spot the data does not cover is a 422, not a 500** — the river, a limped pot, a
+multiway flop, a hand the solved range never holds at that node. That is a real answer
+("no chart here"), and the client has to be able to tell it apart from the server being
+broken.
 
 ### How a game state becomes a chart
 
@@ -206,6 +244,48 @@ The chart filenames *are* the preflop tree, so the lookup is a tree walk:
 The charts are **100bb**. A materially different stack gets a loud warning rather than a
 quiet wrong answer: at 15bb the game is largely jam-or-fold and the pack's sizings are
 simply not the right ones, even when its choice of hand happens to agree.
+
+### How a postflop state becomes a node in a solve
+
+The same snapshot-not-history problem, solved by four inferences, each one checked and
+warned about rather than assumed:
+
+1. **The scenario.** The two live seats leave at most two candidates (the single-raised
+   and the 3bet pot between those seats), and the pot at the start of the street — fixed
+   by the preflop line, 5.5bb vs 22.5bb — picks between them.
+2. **The board.** Solves cover the 186-flop subset. A real flop is matched by **suit
+   isomorphism** (all 24 relabellings against the solved set — an exact strategic match);
+   failing that, the nearest solved flop with the same suit and rank pattern stands in,
+   measured with the same weighted rank features `build_flop_subset.py` clustered with.
+   Hero's cards and the turn card are translated through the same suit map, so a flush
+   draw is still a flush draw on the solved board.
+3. **The street so far.** The two `bet` amounts are matched against every partial line
+   in the tree that ends with hero to act — structure first (who has put chips in), then
+   closest sizing, exactly like the preflop snap.
+4. **The flop line (turn only).** The client sends the full state at every hero
+   decision, so the server has already *watched* the flop betting: it remembers each
+   flop request (keyed by dealer + the three flop cards — the same hand for any
+   practical purpose), and the turn request only has to complete that observed prefix,
+   which the turn pot does uniquely. Memory is an overlay, never a dependency: with no
+   matching entry (server restarted, flop request never arrived) or a pot that
+   contradicts it, the line is inferred from the pot instead — what each player put in
+   on the flop is `(turn pot − flop pot) / 2` — and then bet-call and check-bet-call
+   can cost the same. That is a real ambiguity, and the response warns which line it
+   picked rather than pretending to know. The two lines reach genuinely different
+   strategies (a checked-through range is a different range), which is why observing
+   beats inferring.
+
+A solve is ~100MB of json and takes ~1.5s to parse; the advisor keeps the last two
+parsed solves in memory (~1GB each), so the turn question about a flop you already asked
+about is instant. Everything else (stack/SPR mismatch, snapped sizings, snapped boards,
+a resettled suit) comes back in `warnings`.
+
+**Docker note:** the image deliberately excludes `resources/outputs/` (tens of GB), so
+the container answers preflop only unless the solves are mounted in:
+
+```sh
+docker run -d -p 8000:8000 -v "$PWD/resources/outputs:/app/resources/outputs:ro" preflop-advisor
+```
 
 ## Known solver quirks
 
