@@ -79,6 +79,36 @@ have true 3-handed charts, prefer them.
 
 These ranges also assume **no ante**. With an ante every pot in the table above is wrong.
 
+## Heads-up (when a player busts)
+
+Once the third player is out, the game is true heads-up and **nothing above applies**: the
+dealer now posts the small blind, acts first preflop and **last** postflop — the `SB_vs_BB`
+scenario has that postflop position reversed, and the qb_ranges charts assume another
+player left to act. The heads-up game is answered instead by the HoldemResources Nash
+equilibrium of the **jam-or-fold** game, in `ranges/heads_up_ranges/`:
+
+| file | holds |
+|---|---|
+| `holdemresources_hu_push.csv` | the SB's shove range, one row per effective stack |
+| `holdemresources_hu_call.csv` | the BB's call-a-shove range, same layout |
+
+Rows run 1–200bb in 0.05bb steps; cells are frequencies, almost all 0 or 1 with fractions
+at the Nash boundary. The advisor covers the two nodes that make up jam-or-fold poker —
+the SB first in, and the BB facing a jam — and refuses everything else (limps, raises
+smaller than all-in, postflop) the same way a missing chart does.
+
+**Trust it at ~15bb effective and below.** Deeper, the tables remain unexploitable *as
+long as you only ever jam or fold*, but a raise-based strategy earns more; the advisor
+still answers there, with a warning saying exactly that.
+
+The API routes to these tables automatically when a villain seat is busted (zero stack,
+zero bet, inactive) or absent from the request. For a quick lookup at the table:
+
+```sh
+python3 resources/python/hu_advisor.py --hand Q7o --stack 8 --seat SB    # => ALL-IN
+python3 resources/python/hu_advisor.py --hand A9o --stack 12 --seat BB   # => CALL
+```
+
 ## Flop subset
 
 Solves run against `resources/text/flop_subset.txt` — 186 flops, rebuilt from the 1755

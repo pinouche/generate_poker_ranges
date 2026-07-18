@@ -4,9 +4,10 @@
                    -> the strategy for hero's hand at that node
                       (preflop: the qb_ranges charts; flop/turn: the solves)
 
-The lookups live in preflop_advisor and postflop_advisor; this module only converts
-between JSON and those functions, so the endpoint and the CLIs can never disagree
-about what the charts and solves say. The street field routes the request.
+The lookups live in preflop_advisor, postflop_advisor and hu_advisor; this module only
+converts between JSON and those functions, so the endpoint and the CLIs can never
+disagree about what the charts and solves say. The street field routes the request,
+except that a busted third player routes to the heads-up push/fold tables first.
 
 Run:
     uvicorn api:app --app-dir resources/python --reload
@@ -18,14 +19,16 @@ from typing import Any, Literal
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 
+import hu_advisor as hu
 import postflop_advisor as postflop
 from preflop_advisor import Unsupported, advise, describe, size_of
 
 app = FastAPI(
     title="Poker advisor",
     description="Maps a live game state onto the qb_ranges preflop charts "
-                "(street=preflop) or the solved postflop trees (street=flop/turn).",
-    version="1.1.0",
+                "(street=preflop), the solved postflop trees (street=flop/turn), or "
+                "the heads-up Nash push/fold tables when a third player has busted.",
+    version="1.2.0",
 )
 
 # Piggyback on uvicorn's handlers so these lines land wherever the server's own log does.
@@ -77,8 +80,10 @@ class GameState(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     hero: Player
-    villain_left: Player
-    villain_right: Player
+    # A villain may be absent: the table drops (or zeroes out) a player who busted, and
+    # the hand is then heads-up rather than malformed.
+    villain_left: Player | None = None
+    villain_right: Player | None = None
     board: list[Any] = []
     pot: float = 0
     small_blind: float | None = None
@@ -127,7 +132,8 @@ def render_request(state: GameState) -> str:
     seats = (("hero", state.hero), ("villain_left", state.villain_left),
              ("villain_right", state.villain_right))
     rows = [f"{name:<14}{cards_of(p):<8}{p.stack:>8,.0f}{p.bet:>8,.0f}"
-            f"{'' if p.active else '   folded'}"
+            f"{'' if p.active else '   folded'}" if p is not None else
+            f"{name:<14}{'--':<8}{'':>8}{'':>8}   busted"
             for name, p in seats]
     header = f"{'':<14}{'cards':<8}{'stack':>8}{'bet':>8}"
     board = "".join(f"{c['rank']}{c['suit']}" if isinstance(c, dict) else str(c)
@@ -158,8 +164,8 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-def preflop_advice(state: GameState) -> Advice:
-    r = advise(state.model_dump())
+def preflop_advice(state: GameState, advise_fn=advise) -> Advice:
+    r = advise_fn(state.model_dump())
 
     bb, to_call = r["bb"], r["to_call"]
     options = [to_option(a, w, bb, to_call) for a, w, _ in r["strategy"]]
@@ -211,7 +217,12 @@ def advise_endpoint(state: GameState) -> Advice:
     log.info(render_request(state))
 
     try:
-        if state.street == "preflop":
+        if hu.is_heads_up(state.model_dump()):
+            # A busted third player makes this true heads-up: none of the 3-handed
+            # material applies, so route every street to the push/fold tables --
+            # hu.advise itself rejects postflop, with the reason why.
+            advice = preflop_advice(state, hu.advise)
+        elif state.street == "preflop":
             advice = preflop_advice(state)
         else:
             advice = postflop_advice(state)

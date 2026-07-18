@@ -17,6 +17,7 @@ import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+import hu_advisor as hu
 import postflop_advisor as postflop
 from preflop_advisor import Unsupported, advise as preflop_advise
 
@@ -431,6 +432,103 @@ def test_multiway_flop_unsupported():
 
 
 # ---------------------------------------------------------------------------
+# Heads-up: the third player busted, so the Nash push/fold tables take over.
+# ---------------------------------------------------------------------------
+
+def busted_seat():
+    """An empty chair: no cards, no chips, no bet -- unlike a fold, which keeps a stack."""
+    return player(stack=0.0, bet=0.0, active=False)
+
+
+def hu_sb_first_in(hand, stack_bb=10.0):
+    """Hero on the button (= the SB heads-up), blinds posted, nobody has acted."""
+    return table('hero', 'preflop',
+                 hero=player(hand, stack=stack_bb * BB - 1, bet=1),   # SB posted
+                 left=player(stack=stack_bb * BB - 2, bet=2),         # BB posted
+                 right=busted_seat())
+
+
+def hu_bb_facing_jam(hand, stack_bb=10.0):
+    """Hero in the BB; the SB (villain_left, on the button) has jammed."""
+    return table('villain_left', 'preflop',
+                 hero=player(hand, stack=stack_bb * BB - 2, bet=2),
+                 left=player(stack=0.0, bet=stack_bb * BB),           # all-in
+                 right=busted_seat())
+
+
+def test_heads_up_detected_only_on_a_busted_seat():
+    assert hu.is_heads_up(hu_sb_first_in(['Ah', 'Ad']))
+    assert not hu.is_heads_up(btn_first_in(['Ah', 'Ad'])), "three live players"
+    folded = bb_facing_btn_open(['Ah', 'Ad'])   # SB folded but still has chips
+    assert not hu.is_heads_up(folded), "a folded player has not busted"
+
+
+def test_hu_sb_jams_aces_at_any_depth():
+    for stack_bb in (3.0, 10.0, 100.0):
+        r = hu.advise(hu_sb_first_in(['Ah', 'Ad'], stack_bb))
+        assert top_action(r) == 'AllIn', f"AA always jams at {stack_bb}bb"
+        assert weights(r)['AllIn'] > 0.99
+    show('HU SB first in with AA, 10bb', hu.advise(hu_sb_first_in(['Ah', 'Ad'])))
+
+
+def test_hu_sb_stack_depth_moves_the_line():
+    # Q7o is a Nash push at 10bb and a fold at 20bb; 72o pushes at neither.
+    short = hu.advise(hu_sb_first_in(['Qh', '7s'], stack_bb=10.0))
+    show('HU SB first in with Q7o, 10bb', short)
+    check_distribution(short)
+    assert top_action(short) == 'AllIn'
+
+    deep = hu.advise(hu_sb_first_in(['Qh', '7s'], stack_bb=20.0))
+    show('HU SB first in with Q7o, 20bb', deep)
+    assert top_action(deep) == 'FOLD'
+
+    assert top_action(hu.advise(hu_sb_first_in(['7h', '2s']))) == 'FOLD'
+
+
+def test_hu_bb_calls_jam_with_premium_folds_trash():
+    r = hu.advise(hu_bb_facing_jam(['Ah', 'Ad']))
+    show('HU BB vs 10bb jam with AA', r)
+    check_distribution(r)
+    assert r['hero_seat'] == 'BB'
+    assert top_action(r) == 'Call' and weights(r)['Call'] > 0.99
+
+    r = hu.advise(hu_bb_facing_jam(['7h', '2s']))
+    show('HU BB vs 10bb jam with 72o', r)
+    assert top_action(r) == 'FOLD'
+
+
+def test_hu_deep_stack_answers_with_a_warning():
+    r = hu.advise(hu_sb_first_in(['Ah', 'Ad'], stack_bb=100.0))
+    assert any('jam-or-fold' in w for w in r['warnings']), \
+        "100bb is far beyond push/fold territory; the answer must say so"
+
+
+def test_hu_effective_stack_is_the_short_stack():
+    # Hero covers a 5bb villain: the 5bb table row decides, and Q7o pushes there.
+    state = hu_sb_first_in(['Qh', '7s'], stack_bb=50.0)
+    state['villain_left'] = player(stack=5 * BB - 2, bet=2)
+    r = hu.advise(state)
+    show('HU SB with Q7o, 50bb vs a 5bb stack', r)
+    assert abs(r['eff_bb'] - 5.0) < 1e-9
+    assert top_action(r) == 'AllIn'
+
+
+def test_hu_normal_raise_unsupported():
+    # The SB min-raises with chips behind: the tables only answer a jam.
+    state = hu_bb_facing_jam(['Ah', 'Ad'])
+    state['villain_left'] = player(stack=16, bet=4)
+    with pytest.raises(Unsupported, match='all-in'):
+        hu.advise(state)
+
+
+def test_hu_postflop_unsupported():
+    state = hu_sb_first_in(['Ah', 'Ad'])
+    state['street'] = 'flop'
+    with pytest.raises(Unsupported, match='postflop'):
+        hu.advise(state)
+
+
+# ---------------------------------------------------------------------------
 # The HTTP endpoint: same spots, through api.py's models and conversion.
 # ---------------------------------------------------------------------------
 
@@ -468,3 +566,28 @@ def test_api_river_is_422_not_500(client):
     resp = client.post('/advise', json=state)
     assert resp.status_code == 422
     assert 'river' in resp.json()['detail']
+
+
+def test_api_heads_up(client):
+    state = hu_sb_first_in(['Ah', 'Ad'])
+    resp = client.post('/advise', json=state)
+    assert resp.status_code == 200, resp.text
+    a = resp.json()
+    print(f"\n  API: HU SB first in with AA, 10bb  =>  {a['recommendation']['action']}")
+    assert a['hero_seat'] == 'SB'
+    assert a['recommendation']['kind'] == 'ALLIN'
+    assert a['pure'] is True
+
+    # A table that drops the busted seat from the json entirely works the same way.
+    del state['villain_right']
+    resp = client.post('/advise', json=state)
+    assert resp.status_code == 200, resp.text
+    assert resp.json()['recommendation']['kind'] == 'ALLIN'
+
+
+def test_api_heads_up_postflop_is_422(client):
+    state = hu_sb_first_in(['Ah', 'Ad'])
+    state['street'] = 'flop'
+    resp = client.post('/advise', json=state)
+    assert resp.status_code == 422
+    assert 'postflop' in resp.json()['detail']
