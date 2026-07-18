@@ -14,6 +14,7 @@ Run:
 """
 
 import logging
+import os
 from typing import Any, Literal
 
 from fastapi import FastAPI, HTTPException
@@ -34,6 +35,12 @@ app = FastAPI(
 
 # Piggyback on uvicorn's handlers so these lines land wherever the server's own log does.
 log = logging.getLogger("uvicorn.error").getChild("advise")
+
+# By default the log is one block per hand: just the chart's answer (the action-so-far
+# line and the option rows), enough to read a live table at a glance. ADVISOR_VERBOSE
+# turns on the full picture -- the incoming game state, the warnings, and uvicorn's own
+# per-request access line -- for when a spot looks wrong and you need to see why.
+VERBOSE = os.getenv("ADVISOR_VERBOSE", "").strip().lower() in ("1", "true", "yes", "on")
 
 
 def timestamp_logs(datefmt: str = "%H:%M:%S") -> None:
@@ -56,6 +63,11 @@ def timestamp_logs(datefmt: str = "%H:%M:%S") -> None:
     if not log.hasHandlers():
         logging.basicConfig(level=logging.INFO, datefmt=datefmt,
                             format="%(asctime)s %(levelname)s: %(message)s")
+
+    # The per-request "POST /advise HTTP/1.1 200 OK" access line duplicates what our own
+    # block already says; drop it unless the user asked for the full picture.
+    if not VERBOSE:
+        logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 
 
 timestamp_logs()
@@ -149,16 +161,25 @@ def cards_of(p: Player) -> str:
     return "".join(f"{c.rank}{c.suit}" for c in p.cards) or "--"
 
 
+def option_rows(a: Advice) -> list[str]:
+    width = max(len(o.action) for o in a.options)
+    return [f"{o.action:<{width}}  {o.frequency:>6.1%}"
+            f"{'  <- recommended' if o is a.recommendation else ''}"
+            for o in a.options]
+
+
 def render_advice(a: Advice) -> str:
     others = ", ".join(f"{name.replace('villain_', '')} {seat}"
                        for name, seat in a.seats.items() if name != "hero")
-    width = max(len(o.action) for o in a.options)
-    rows = [f"{o.action:<{width}}  {o.frequency:>6.1%}"
-            f"{'  <- recommended' if o is a.recommendation else ''}"
-            for o in a.options]
     warnings = [f"! {w}" for w in a.warnings]
     return INDENT.join([f"POST /advise -> 200  {a.hand} as {a.hero_seat} ({others})",
-                        a.action_so_far, *rows, *warnings])
+                        a.action_so_far, *option_rows(a), *warnings])
+
+
+def render_advice_compact(a: Advice) -> str:
+    # The quiet default: the spot in one line, then the chart's answer. No game-state
+    # echo, no warnings, no seat header -- just what a player glances at each hand.
+    return INDENT.join([a.action_so_far, *option_rows(a)])
 
 
 @app.get("/health")
@@ -234,7 +255,8 @@ def advise_endpoint(state: GameState) -> Advice:
     street) is a 422, not a 500: it is a fine question with no answer here, and the
     client needs to tell that apart from us being broken.
     """
-    log.info(render_request(state))
+    if VERBOSE:
+        log.info(render_request(state))
 
     try:
         if hu.is_heads_up(state.model_dump()):
@@ -255,5 +277,5 @@ def advise_endpoint(state: GameState) -> Advice:
             log.info("POST /advise -> 422  no chart for this spot: %s", e)
             raise HTTPException(status_code=422, detail=f"No chart for this spot: {e}")
 
-    log.info(render_advice(advice))
+    log.info(render_advice(advice) if VERBOSE else render_advice_compact(advice))
     return advice

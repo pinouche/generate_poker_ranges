@@ -216,6 +216,19 @@ volume mount above is how the container reads them. Without the mount it still a
 everything, but every postflop answer is the heuristic, not a solve. Interactive docs are
 at `localhost:8000/docs`, health at `/health`.
 
+By default the log is one block per hand — the action-so-far line and the option rows,
+nothing else:
+
+```
+BTN opens 2.5bb, SB folds, BB calls | flop Kh 6c 6h: hero first to act
+CHECK          86.1%  <- recommended
+BET 40 (2bb)   13.9%
+```
+
+Add `-e ADVISOR_VERBOSE=1` to `docker run` for the full picture — the incoming game
+state, the `warnings`, and uvicorn's per-request access line — when a spot looks wrong and
+you need to see why.
+
 ### Without Docker
 
 ```sh

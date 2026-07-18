@@ -21,4 +21,6 @@ EXPOSE 8000
 
 # One worker: the charts are small text files read per request, so this is IO-trivial and
 # the container is meant to sit next to one table, not serve a fleet.
+# The log is one block per hand (the chart's answer only); run with -e ADVISOR_VERBOSE=1
+# to also see the incoming game state, the warnings, and uvicorn's access line.
 CMD ["uvicorn", "api:app", "--app-dir", "resources/python", "--host", "0.0.0.0", "--port", "8000"]
