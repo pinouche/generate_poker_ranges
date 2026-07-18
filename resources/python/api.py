@@ -113,7 +113,8 @@ class Advice(BaseModel):
 
 
 def kind_of(action: str) -> str:
-    return {"FOLD": "FOLD", "Call": "CALL", "AllIn": "ALLIN"}.get(action, "RAISE")
+    return {"FOLD": "FOLD", "Check": "CHECK", "Call": "CALL",
+            "AllIn": "ALLIN"}.get(action, "RAISE")
 
 
 def to_option(action: str, weight: float, bb: float, to_call: float) -> Option:
@@ -211,8 +212,8 @@ def advise_endpoint(state: GameState) -> Advice:
 
     Preflop is a chart lookup; the flop and the turn are read out of the solved trees.
     A spot neither covers is a 422, not a 500: it is a fine question with no answer here
-    (a river, a limped pot, a multiway flop), and the client needs to tell those apart
-    from us being broken.
+    (a river, a multiway flop), and the client needs to tell those apart from us being
+    broken. A preflop limp is answered heuristically rather than 422'd.
     """
     log.info(render_request(state))
 

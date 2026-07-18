@@ -263,14 +263,46 @@ def test_swapped_seating_is_caught():
         preflop_advise(state)
 
 
-def test_limped_pot_unsupported():
-    # SB completes to 2 instead of raising or folding: no limp branches in the charts.
+def test_bb_checks_a_limp():
+    # SB completes to 2 instead of raising or folding. The pack has no limp branch, but
+    # hero closes the action in the BB and can check for free, so we recommend that rather
+    # than going silent -- flagged as a heuristic.
     state = table('villain_left', 'preflop',
                   hero=player(['Ah', 'Ks'], bet=2),              # BB
                   left=player(bet=0, active=False),              # BTN folded
                   right=player(bet=2))                           # SB limped
-    with pytest.raises(Unsupported, match='limp'):
-        preflop_advise(state)
+    r = preflop_advise(state)
+    show('BB facing a SB limp with AKo', r)
+    check_distribution(r)
+    assert r['hero_seat'] == 'BB'
+    assert top_action(r) == 'Check', "the BB can always take a free flop against a limp"
+    assert any('heuristic' in w.lower() for w in r['warnings'])
+
+
+def test_sb_iso_raises_a_limp():
+    # BTN limps; hero is the SB with the BB still behind. No limp branch, so we fall back
+    # to hero's raise-first-in range as the iso range and size up 1bb per limper (-> 4bb).
+    state = table('villain_right', 'preflop',
+                  hero=player(['Ah', 'Ks'], bet=1),              # SB
+                  left=player(bet=2),                            # BB
+                  right=player(bet=2))                           # BTN limped
+    r = preflop_advise(state)
+    show('SB facing a BTN limp with AKo', r)
+    check_distribution(r)
+    assert r['hero_seat'] == 'SB'
+    assert top_action(r) == '4.0bb', "AKo isolates a limper (3bb open + 1bb per limper)"
+    assert any('heuristic' in w.lower() for w in r['warnings'])
+
+
+def test_sb_folds_trash_to_a_limp():
+    state = table('villain_right', 'preflop',
+                  hero=player(['7h', '2s'], bet=1),              # SB
+                  left=player(bet=2),                            # BB
+                  right=player(bet=2))                           # BTN limped
+    r = preflop_advise(state)
+    show('SB facing a BTN limp with 72o', r)
+    check_distribution(r)
+    assert top_action(r) == 'FOLD', "72o folds even to a limp"
 
 
 def test_short_stack_warns():

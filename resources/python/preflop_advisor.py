@@ -41,6 +41,19 @@ class Unsupported(Exception):
     """The spot is real but this chart pack has nothing for it."""
 
 
+class LimpedPot(Unsupported):
+    """A player completed to the big blind instead of raising. The pack has no limp
+    branch, but unlike a truly unanswerable spot we can still give a practical answer
+    (iso-raise, or a free check in the big blind), so advise() catches this to fall back
+    rather than letting it surface as 'no chart'. `limpers` are the seats that limped."""
+
+    def __init__(self, limpers):
+        self.limpers = limpers
+        super().__init__(
+            f"limped pot: {', '.join(limpers)} completed to the big blind rather than "
+            f"raising, and these charts have no limp branches")
+
+
 def seats_of(state):
     """Map each player to a seat, starting from the dealer and moving clockwise."""
     dealer = state['dealer']
@@ -131,12 +144,13 @@ def actions_so_far(state, seats, bb):
             raise Unsupported("a bet exceeds the blind but no raiser found")
         # A non-BB player sitting at exactly the big blind has voluntarily completed to it
         # without raising -- a limp. The charts are raise-or-fold and have no limp branches,
-        # so this is a real spot we cannot answer, not the fold-round-to-hero case below.
-        # (The BB is naturally at bb from posting, so only the others betray a limp.)
-        if any(seat != 'BB' and pl['bet'] > bb - 1e-9 for seat, pl in live):
-            raise Unsupported(
-                "limped pot: a player completed to the big blind rather than raising, and "
-                "these charts have no limp branches")
+        # so this is not the fold-round-to-hero case below; advise() catches LimpedPot and
+        # falls back to a heuristic. (The BB is naturally at bb from posting, so only the
+        # others betray a limp.)
+        limpers = [seat for seat, pl in live
+                   if seat != 'BB' and pl['bet'] > bb - 1e-9]
+        if limpers:
+            raise LimpedPot(sorted(limpers, key=PREFLOP_ORDER.index))
         return []   # folded round to the button: nobody has voluntarily put money in
 
     # A raiser with nothing behind has shoved, and the charts name that node 'AllIn'
@@ -240,6 +254,10 @@ def describe(action, bb=None, to_call=None):
     something you can type into a table, '50' is."""
     if action == 'FOLD':
         return 'FOLD'
+    if action == 'Check':
+        return 'CHECK'
+    if action == 'Limp':
+        return 'LIMP'
     if action == 'Call':
         return 'CALL' + (f" {to_call:g}" if to_call else '')
     if action == 'AllIn':
@@ -247,6 +265,75 @@ def describe(action, bb=None, to_call=None):
     if bb:
         return f"RAISE to {size_of(action) * bb:g} ({action})"
     return f"RAISE to {action}"
+
+
+def open_node(hero_seat, hand):
+    """Hero's raise-first-in strategy for `hand`: the chart node where the pot is folded
+    to hero. Returns (strategy, open_size) with the same (action, weight, path) tuples an
+    open lookup produces -- typically a raise and a fold summing to 1 -- and the size of
+    the raise, or None if this seat has no open (e.g. the big blind never opens)."""
+    charts = load_charts(hero_seat)
+    options = [(seq, snapshot_line(seq[:-1]), path) for seq, path in charts
+               if seq[-1][0] == hero_seat and not snapshot_line(seq[:-1])]
+    if not options:
+        raise Unsupported(f"no open (raise-first-in) chart for {hero_seat}")
+    strategy = sorted(((seq[-1][1], read_weight(path, hand), path)
+                       for seq, _, path in options), key=lambda x: -x[1])
+    open_size = next((size_of(a) for a, _, _ in strategy if is_raise(a)), None)
+    return strategy, open_size
+
+
+def advise_vs_limp(state, seats, hero_seat, hand, bb, sb, limpers):
+    """Answer a limped pot the raise-or-fold pack has no branch for.
+
+    Two shapes, by whether hero can still close the action for free:
+    - Hero in the big blind faces the limp last. Checking is never a blunder -- a free
+      flop -- so we floor the answer there. Iso-raising the strongest hands is +EV but
+      the pack has no range for it, and we do not invent one.
+    - Otherwise hero still has a fold-or-raise decision. Hero's raise-first-in range is a
+      good proxy for the hands worth isolating a limper with, so we reuse it and size the
+      raise up one big blind per limper (the standard iso adjustment).
+
+    Every answer here is flagged: it is a heuristic laid over the charts, not a solved node.
+    """
+    stack_bb = state['hero']['stack'] / bb
+    top = max(state[p]['bet'] for p in TABLE_ORDER if state[p].get('active', True))
+    reason = str(LimpedPot(limpers))
+    warnings = [reason[0].upper() + reason[1:] +
+                " -- the answer below is a practical heuristic, not a solved node."]
+
+    if hero_seat == 'BB':
+        strategy = [('Check', 1.0, None)]
+        chart_line = []
+        warnings.append(
+            "Recommending CHECK: you close the action in the big blind and see the flop "
+            "for free. Iso-raising your strongest hands is profitable but this pack has no "
+            "limp range to size it from.")
+    else:
+        strategy, open_size = open_node(hero_seat, hand)
+        chart_line = []
+        if open_size is not None:
+            iso_size = open_size + len(limpers)
+            strategy = [(f"{iso_size:.1f}bb" if is_raise(a) else a, w, p)
+                        for a, w, p in strategy]
+            warnings.append(
+                f"Iso range approximated from the {hero_seat} raise-first-in range, "
+                f"sized to {iso_size:g}bb (open + 1bb per limper).")
+        if abs(sum(w for _, w, _ in strategy) - 1.0) > 0.02:
+            warnings.append("The option set may be incomplete: the frequencies do not sum to 1.")
+
+    if abs(stack_bb - CHART_DEPTH_BB) > 0.15 * CHART_DEPTH_BB:
+        warnings.append(
+            f"Stack mismatch: hero is {stack_bb:.0f}bb deep but the charts are "
+            f"{CHART_DEPTH_BB:.0f}bb. Short stacks play a different game (fewer flats, more "
+            f"jams) -- treat this as a rough guide only.")
+
+    return {
+        'seats': seats, 'hero_seat': hero_seat, 'hand': hand, 'bb': bb, 'sb': sb,
+        'prior': [(seat, 'Limp') for seat in limpers], 'strategy': strategy,
+        'snap_error': 0.0, 'stack_bb': stack_bb, 'chart_line': chart_line,
+        'to_call': top - state['hero']['bet'], 'warnings': warnings,
+    }
 
 
 def advise(state, bb_override=None):
@@ -261,7 +348,10 @@ def advise(state, bb_override=None):
     # when the table omits it, and float(None) is a crash, not a fallback.
     sb = float(state.get('small_blind') or bb / 2)
     check_seating(state, seats, sb, bb)
-    prior = actions_so_far(state, seats, bb)
+    try:
+        prior = actions_so_far(state, seats, bb)
+    except LimpedPot as limp:
+        return advise_vs_limp(state, seats, hero_seat, hand, bb, sb, limp.limpers)
 
     charts = load_charts(hero_seat)
     # The option set: every chart whose line -- seen the way a snapshot shows it, each
@@ -318,7 +408,7 @@ def report(state, r):
     line = ' -> '.join(f"{s} {describe(a, bb)}" for s, a in r['prior']) or 'folds to hero'
     print(f"Action   : {line}")
 
-    if r['prior']:
+    if r['chart_line']:
         chart_line = ' -> '.join(f"{s} {describe(a, bb)}" for s, a in r['chart_line'])
         snap = f"  [chart line: {chart_line}]"
         if r['snap_error'] > 1e-9:
