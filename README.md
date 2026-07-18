@@ -192,31 +192,37 @@ single range file is wrong at half the nodes.
 
 ## Advisor (API)
 
-One endpoint answers every street the data covers. Preflop is a lookup in the charts
+One endpoint answers every street. Preflop is a lookup in the charts
 (`preflop_advisor.py`); the flop and the turn are read out of the solved trees above
 (`postflop_advisor.py`). `api.py` is both behind HTTP — the `street` field routes the
-request. The river is solved but not dumped, so it is a 422.
+request. A postflop spot the solves cannot answer — a multiway pot, a river (solved but
+not dumped), heads-up after a bust, solves missing from disk — falls back to an
+equity-vs-pot-odds heuristic (`heuristic_advisor.py`) and says so in `warnings`.
 
 ### Docker
 
 ```sh
 docker build -t preflop-advisor .
-docker run -d --name preflop -p 8000:8000 preflop-advisor
+docker run -d --name preflop -p 8000:8000 \
+    -v "$PWD/resources/outputs:/app/resources/outputs:ro" preflop-advisor
 
 curl -X POST localhost:8000/advise -H 'Content-Type: application/json' -d @state.json
 docker rm -f preflop                                   # stop it
 ```
 
-The image (~277 MB) carries only the advisor and `ranges/qb_ranges/`. `.dockerignore` keeps
-`resources/outputs/` out of the build context — the solves are tens of GB and the API never
-reads them. Interactive docs are at `localhost:8000/docs`, health at `/health`.
+The image (~277 MB) carries only the advisor and `ranges/qb_ranges/`; the solves are tens
+of GB, so `.dockerignore` keeps `resources/outputs/` out of the build context and the
+volume mount above is how the container reads them. Without the mount it still answers
+everything, but every postflop answer is the heuristic, not a solve. Interactive docs are
+at `localhost:8000/docs`, health at `/health`.
 
 ### Without Docker
 
 ```sh
-uvicorn api:app --app-dir resources/python --reload     # same API on :8000
-python3 resources/python/preflop_advisor.py state.json  # preflop, straight from the CLI
-python3 resources/python/postflop_advisor.py state.json # flop/turn, same json
+uvicorn api:app --app-dir resources/python --reload      # same API on :8000
+python3 resources/python/preflop_advisor.py state.json   # preflop, straight from the CLI
+python3 resources/python/postflop_advisor.py state.json  # flop/turn, same json
+python3 resources/python/heuristic_advisor.py state.json # the fallback, same json
 ```
 
 ### The request and the answer
@@ -248,10 +254,17 @@ Postflop the answer has the same shape, with two more `kind`s (`CHECK`, `BET`), 
 `action_so_far` names the whole line the state implies, e.g.
 `"BTN opens 2.5bb, SB folds, BB calls | flop Kh 5d 2d: BB CHECK -> BTN BET 4 (2bb)"`.
 
-**A spot the data does not cover is a 422, not a 500** — the river, a limped pot, a
-multiway flop, a hand the solved range never holds at that node. That is a real answer
-("no chart here"), and the client has to be able to tell it apart from the server being
-broken.
+**A spot the data does not cover still gets an answer when a sane one exists.** A
+preflop limp is answered heuristically (iso-raise off the open range, or a free check in
+the BB). Postflop, anything the solves refuse — a multiway flop, a river, heads-up after
+a bust, a hand the solved range never holds at that node — falls back to
+`heuristic_advisor.py`: Monte Carlo equity against random villain hands, compared with
+the pot odds (facing a bet) or a value-bet threshold (checked to). It never bluffs and
+knows nothing about ranges, and every such answer carries a warning naming the reason the
+solve could not answer, so solve-backed advice and arithmetic are distinguishable at a
+glance. **Only a spot with no sane answer at all is a 422, not a 500** — hero folded,
+malformed cards, an unknown street. That is a real answer ("no chart here"), and the
+client has to be able to tell it apart from the server being broken.
 
 ### How a game state becomes a chart
 
@@ -311,11 +324,11 @@ about is instant. Everything else (stack/SPR mismatch, snapped sizings, snapped 
 a resettled suit) comes back in `warnings`.
 
 **Docker note:** the image deliberately excludes `resources/outputs/` (tens of GB), so
-the container answers preflop only unless the solves are mounted in:
-
-```sh
-docker run -d -p 8000:8000 -v "$PWD/resources/outputs:/app/resources/outputs:ro" preflop-advisor
-```
+none of the above happens unless the solves are mounted in
+(`-v "$PWD/resources/outputs:/app/resources/outputs:ro"`, as in the run command up top).
+Without the mount every postflop request falls back to the equity heuristic — the log
+warning `no solves on disk for scenario ...` on a heads-up flop means the mount is
+missing.
 
 ## Known solver quirks
 
