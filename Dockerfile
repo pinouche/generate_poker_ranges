@@ -12,7 +12,8 @@ RUN pip install --no-cache-dir -r requirements-api.txt
 # Keep the repo's layout: the advisors resolve the charts and solves relative to their
 # own file (../../ranges/..., ../outputs/...), so a flattened copy would not find them.
 COPY resources/python/preflop_advisor.py resources/python/postflop_advisor.py \
-     resources/python/hu_advisor.py resources/python/api.py resources/python/
+     resources/python/hu_advisor.py resources/python/heuristic_advisor.py \
+     resources/python/api.py resources/python/
 COPY ["ranges/qb_ranges", "ranges/qb_ranges/"]
 COPY ["ranges/heads_up_ranges", "ranges/heads_up_ranges/"]
 

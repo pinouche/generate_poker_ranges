@@ -19,6 +19,7 @@ from typing import Any, Literal
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 
+import heuristic_advisor as heuristic
 import hu_advisor as hu
 import postflop_advisor as postflop
 from preflop_advisor import Unsupported, advise, describe, size_of
@@ -206,14 +207,32 @@ def postflop_advice(state: GameState) -> Advice:
     )
 
 
+def heuristic_advice(state: GameState, reason: str) -> Advice:
+    r = heuristic.advise(state.model_dump(), reason=reason)
+    options = [Option(**o) for o in r["options"]]
+    return Advice(
+        hand=r["hand"],
+        hero_seat=r["hero_seat"],
+        seats=r["seats"],
+        action_so_far=r["action_so_far"],
+        options=options,
+        recommendation=options[0],
+        pure=options[0].frequency >= 0.999,
+        warnings=r["warnings"],
+    )
+
+
 @app.post("/advise", response_model=Advice)
 def advise_endpoint(state: GameState) -> Advice:
     """Read the chart or the solve for whatever spot this state describes.
 
     Preflop is a chart lookup; the flop and the turn are read out of the solved trees.
-    A spot neither covers is a 422, not a 500: it is a fine question with no answer here
-    (a river, a multiway flop), and the client needs to tell those apart from us being
-    broken. A preflop limp is answered heuristically rather than 422'd.
+    A postflop spot the solves cannot answer (a multiway flop, a river, heads-up after
+    a bust, solves missing from disk) falls back to the equity-vs-pot-odds heuristic,
+    flagged as such in the warnings -- like a preflop limp, a practical answer beats a
+    422. Only a spot with no sane answer at all (hero folded, malformed cards, unknown
+    street) is a 422, not a 500: it is a fine question with no answer here, and the
+    client needs to tell that apart from us being broken.
     """
     log.info(render_request(state))
 
@@ -228,8 +247,13 @@ def advise_endpoint(state: GameState) -> Advice:
         else:
             advice = postflop_advice(state)
     except Unsupported as e:
-        log.info("POST /advise -> 422  no chart for this spot: %s", e)
-        raise HTTPException(status_code=422, detail=f"No chart for this spot: {e}")
+        try:
+            advice = heuristic_advice(state, str(e))
+        except Unsupported:
+            # The heuristic could not answer either; the original reason is the one
+            # that names the spot, so it is the one worth reporting.
+            log.info("POST /advise -> 422  no chart for this spot: %s", e)
+            raise HTTPException(status_code=422, detail=f"No chart for this spot: {e}")
 
     log.info(render_advice(advice))
     return advice

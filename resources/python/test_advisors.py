@@ -17,6 +17,7 @@ import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+import heuristic_advisor as heuristic
 import hu_advisor as hu
 import postflop_advisor as postflop
 from preflop_advisor import Unsupported, advise as preflop_advise
@@ -592,7 +593,22 @@ def test_api_postflop(client):
     assert 'FOLD' in kinds, "facing a bet, folding is at least on the option list"
 
 
-def test_api_river_is_422_not_500(client):
+def test_api_river_falls_back_to_heuristic(client):
+    # The solves stop at the turn, but a real river with a full board still gets an
+    # answer -- the equity heuristic -- flagged as such in the warnings.
+    state = btn_on_flop(['Ah', 'As'], board=FLOP + ('7h', '2d'), pot=FLOP_POT)
+    state['street'] = 'river'
+    resp = client.post('/advise', json=state)
+    assert resp.status_code == 200, resp.text
+    a = resp.json()
+    print(f"\n  API: river with AA (heuristic)  =>  {a['recommendation']['action']}")
+    assert a['recommendation']['kind'] in ('BET', 'ALLIN'), "top set on a blank river bets"
+    assert any('heuristic' in w for w in a['warnings'])
+
+
+def test_api_river_with_short_board_still_422(client):
+    # A 'river' with three board cards is malformed for the heuristic too, so the
+    # original reason (the solves stop at the turn) is the one reported.
     state = btn_on_flop(['Ah', 'As'])
     state['street'] = 'river'
     resp = client.post('/advise', json=state)
@@ -617,9 +633,91 @@ def test_api_heads_up(client):
     assert resp.json()['recommendation']['kind'] == 'ALLIN'
 
 
-def test_api_heads_up_postflop_is_422(client):
+def test_api_heads_up_postflop_falls_back_to_heuristic(client):
+    # The push/fold tables end the hand preflop; a heads-up flop that somehow happens
+    # anyway is answered by the equity heuristic rather than 422'd.
     state = hu_sb_first_in(['Ah', 'Ad'])
     state['street'] = 'flop'
+    state['board'] = [card(c) for c in ('As', 'Kc', '3c')]
+    state['pot'] = 4.0
+    state['hero']['bet'] = state['villain_left']['bet'] = 0.0
+    resp = client.post('/advise', json=state)
+    assert resp.status_code == 200, resp.text
+    a = resp.json()
+    print(f"\n  API: HU flop with AA (heuristic)  =>  {a['recommendation']['action']}")
+    assert a['hero_seat'] == 'SB', "heads-up the dealer is the small blind"
+    assert a['recommendation']['kind'] in ('BET', 'ALLIN'), "top set bets"
+    assert any('heuristic' in w for w in a['warnings'])
+
+    # Without board cards the heuristic cannot answer either, so the original hu
+    # reason survives as the 422 detail.
+    state['board'] = []
     resp = client.post('/advise', json=state)
     assert resp.status_code == 422
     assert 'postflop' in resp.json()['detail']
+
+
+# ---------------------------------------------------------------------------
+# The heuristic fallback: multiway pots and other spots outside the solves.
+# ---------------------------------------------------------------------------
+
+def multiway_flop(hand, board=FLOP, hero_bet=0.0, bets=(0.0, 0.0), pot=6.0):
+    """All three players saw the flop -- the spot the heads-up solves refuse."""
+    return table('hero', 'flop',
+                 hero=player(hand, bet=hero_bet),
+                 left=player(bet=bets[0]),
+                 right=player(bet=bets[1]),
+                 board=board,
+                 pot=pot + hero_bet + sum(bets))
+
+
+def test_api_multiway_flop_falls_back_to_heuristic(client):
+    resp = client.post('/advise', json=multiway_flop(['Ah', 'As']))
+    assert resp.status_code == 200, resp.text
+    a = resp.json()
+    print(f"\n  API: multiway flop with AA (heuristic)  =>  {a['recommendation']['action']}")
+    assert a['recommendation']['kind'] in ('BET', 'ALLIN'), "top set bets multiway too"
+    assert any('heuristic' in w for w in a['warnings'])
+    assert a['recommendation']['frequency'] == 1.0
+    kinds = [o['kind'] for o in a['options']]
+    assert 'CHECK' in kinds, "with no bet to face, checking is on the option list"
+
+
+def test_heuristic_multiway_air_checks_and_folds():
+    r = heuristic.advise(multiway_flop(['7h', '2s'], board=('Ad', 'Kc', '9c')))
+    assert r['options'][0]['kind'] == 'CHECK', "72o with no pair checks"
+
+    r = heuristic.advise(multiway_flop(['7h', '2s'], board=('Ad', 'Kc', '9c'),
+                                       bets=(8.0, 8.0)))
+    assert r['options'][0]['kind'] == 'FOLD', "72o facing a bet multiway folds"
+
+
+def test_heuristic_strong_hand_continues_facing_a_bet():
+    r = heuristic.advise(multiway_flop(['Ah', 'As'], bets=(8.0, 8.0)))
+    assert r['options'][0]['kind'] in ('CALL', 'RAISE', 'ALLIN'), \
+        "top set never folds to a flop bet"
+
+
+def test_heuristic_good_pot_odds_beat_weak_equity():
+    # A tiny bet into a big pot needs almost no equity: even a weak draw calls.
+    r = heuristic.advise(multiway_flop(['6h', '5h'], board=('Ah', 'Kh', '9c'),
+                                       bets=(1.0, 1.0), pot=100.0))
+    assert r['options'][0]['kind'] == 'CALL', "a flush draw calls 1 into 100"
+
+
+def test_heuristic_is_deterministic():
+    state = multiway_flop(['Ah', 'As'])
+    assert heuristic.advise(state)['equity'] == heuristic.advise(state)['equity'], \
+        "the same spot must always get the same answer"
+
+
+def test_heuristic_rejects_what_it_cannot_answer():
+    state = multiway_flop(['Ah', 'As'])
+    state['street'] = 'preflop'
+    with pytest.raises(Unsupported):
+        heuristic.advise(state)
+
+    state = multiway_flop(['Ah', 'As'])
+    state['hero']['active'] = False
+    with pytest.raises(Unsupported, match='folded'):
+        heuristic.advise(state)
