@@ -84,7 +84,10 @@ class Player(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     cards: list[Card] = []
-    stack: float
+    # A busted player keeps their seat in the state but has no chips behind, and some
+    # tables encode that as stack=null rather than 0 or dropping the seat. That is data,
+    # not a malformed request, so accept it here and let busted()/render treat it as out.
+    stack: float | None = None
     bet: float = 0
     active: bool = True
 
@@ -142,13 +145,19 @@ def to_option(action: str, weight: float, bb: float, to_call: float) -> Option:
 INDENT = "\n" + " " * 10
 
 
+def player_row(name: str, p: Player | None) -> str:
+    # A dropped seat (p is None) and a seat kept with no stack (busted, stack=null) both
+    # read as "busted" -- there are no chips to show and formatting None as a number crashes.
+    if p is None or p.stack is None:
+        return f"{name:<14}{'--':<8}{'':>8}{'':>8}   busted"
+    return (f"{name:<14}{cards_of(p):<8}{p.stack:>8,.0f}{p.bet:>8,.0f}"
+            f"{'' if p.active else '   folded'}")
+
+
 def render_request(state: GameState) -> str:
     seats = (("hero", state.hero), ("villain_left", state.villain_left),
              ("villain_right", state.villain_right))
-    rows = [f"{name:<14}{cards_of(p):<8}{p.stack:>8,.0f}{p.bet:>8,.0f}"
-            f"{'' if p.active else '   folded'}" if p is not None else
-            f"{name:<14}{'--':<8}{'':>8}{'':>8}   busted"
-            for name, p in seats]
+    rows = [player_row(name, p) for name, p in seats]
     header = f"{'':<14}{'cards':<8}{'stack':>8}{'bet':>8}"
     board = "".join(f"{c['rank']}{c['suit']}" if isinstance(c, dict) else str(c)
                     for c in state.board)

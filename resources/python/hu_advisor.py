@@ -87,9 +87,12 @@ def frequency(name, eff_bb, hand):
 
 
 def busted(p):
-    """Out of the game entirely, as opposed to folded (keeps a stack) or all-in (has a bet)."""
+    """Out of the game entirely, as opposed to folded (keeps a stack) or all-in (has a bet).
+
+    `... or 0` rather than a .get default: a busted seat is often sent with stack=null,
+    and the key being present means .get returns that None, which would crash the compare."""
     return p is None or (not p.get('active', True)
-                         and p.get('stack', 0) < 1e-9 and p.get('bet', 0) < 1e-9)
+                         and (p.get('stack') or 0) < 1e-9 and (p.get('bet') or 0) < 1e-9)
 
 
 def is_heads_up(state):

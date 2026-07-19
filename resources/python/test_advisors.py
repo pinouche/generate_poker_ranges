@@ -721,3 +721,34 @@ def test_heuristic_rejects_what_it_cannot_answer():
     state['hero']['active'] = False
     with pytest.raises(Unsupported, match='folded'):
         heuristic.advise(state)
+
+
+# A busted seat sent as stack=null instead of 0 (some parsers report it that way).
+# It must read as busted, not crash the comparison in busted() nor the API's stack format.
+# ---------------------------------------------------------------------------
+
+def test_null_stack_busted_seat_is_heads_up():
+    state = hu_sb_first_in(['Ah', 'Ad'])
+    state['villain_right']['stack'] = None   # busted, reported as null rather than 0
+    assert hu.busted(state['villain_right']), "no chips behind is busted, even as null"
+    assert hu.is_heads_up(state)
+    # And it still produces the same jam a zero-stack busted seat does.
+    assert top_action(hu.advise(state)) == 'AllIn'
+
+
+def test_api_accepts_null_stack_busted_seat():
+    from fastapi.testclient import TestClient
+
+    import api
+
+    state = hu_sb_first_in(['Ah', 'Ad'])
+    state['villain_right']['stack'] = None
+
+    # Previously a 422: Player.stack was a required, non-nullable float.
+    api.GameState.model_validate(state)
+    # The VERBOSE log render formats every stack; a null one must not crash it.
+    assert 'busted' in api.render_request(api.GameState.model_validate(state))
+
+    resp = TestClient(api.app).post('/advise', json=state)
+    assert resp.status_code == 200, resp.text
+    assert resp.json()['recommendation']['kind'] == 'ALLIN'
