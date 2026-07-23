@@ -104,6 +104,16 @@ def load_range(file_path):
         return f.read().strip()
 
 
+APPROXIMATE_RANGES_CAVEAT = """
+!! THE RANGES BEHIND THIS SOLVE ARE HAND-WRITTEN APPROXIMATIONS, NOT SOLVER OUTPUT.
+   No heads-up raising range existed to use, so they were written by hand from a tier
+   spec (resources/python/build_hu_ranges.py). The solve below is an exact equilibrium
+   FOR THOSE RANGES; its precision says nothing about whether the ranges are right.
+   The limped pots additionally model a weak, passive limper rather than equilibrium
+   play, so they will have you attacking a balanced limper too hard.
+"""
+
+
 def write_scenario_note(scenario_dir, scenario, range_base):
     """Drop a scenario.txt in the folder saying which preflop action these solves are.
 
@@ -130,9 +140,59 @@ IP  (acts last on the flop):  {ip_seat}
 
 Ranges are from {range_base}.
 Each {{board}}.json here is one solve; the {{board}}.txt beside it is the config that produced it.
-"""
+{scenario.get('caveat', '')}"""
     with open(os.path.join(scenario_dir, "scenario.txt"), 'w') as f:
         f.write(note)
+
+# Heads-up, after the third player busted. The button posts the small blind and acts
+# LAST on every postflop street, so unlike the three-handed set there is only one
+# geometry here: the BB is OOP in every pot, the BTN is IP in every pot. That is why
+# these five names all read <x>_vs_<y> with the BB on one side.
+#
+# Pot and stack, same arithmetic as three-handed -- money in the middle, and 100bb minus
+# what each player put in. Blinds are 0.5/1 with no dead money, since both blinds belong
+# to the two players still in:
+#
+#   BTN opens 2.5, BB calls           2.5 + 2.5           = 5.0    97.5 behind
+#   BTN opens 2.5, BB 3bets to 10,
+#     BTN calls                       10 + 10             = 20.0   90.0 behind
+#   BTN limps 1, BB checks            1 + 1               = 2.0    99.0 behind
+#   BTN limps 1, BB raises to 4,
+#     BTN calls                       4 + 4               = 8.0    96.0 behind
+#
+# The limped pots run at SPR ~50 and ~12, far deeper than anything in the three-handed
+# set, so their trees are the most expensive here. They are also the least trustworthy:
+# their ranges model a weak limper rather than equilibrium play (see build_hu_ranges.py).
+HU_RANGE_BASE = "ranges/heads_up_ranges/100bb"
+
+# Ordered cheapest-and-most-common first, so an interrupted run still leaves the useful
+# scenarios complete. Solve cost climbs steeply with SPR: a measured HU_limped board took
+# 241s and 98MB, against ~45s for the three-handed set, so the limped pot alone is most
+# of this run's total. It is also the least trustworthy of the four (its ranges model a
+# weak limper, not equilibrium play), which is why it is last rather than first.
+HU_SCENARIOS = [
+    {"name": "HU_BB_3bet",
+     "preflop": "heads-up: BTN opens 2.5bb, BB 3bets to 10bb, BTN calls",
+     "ip":  "BTN/BTN_2.5bb_BB_10.0bb_BTN_Call.txt",
+     "oop": "BB/BTN_2.5bb_BB_10.0bb.txt",
+     "pot": 20.0, "stack": 90.0},
+    {"name": "HU_BTN_vs_BB",
+     "preflop": "heads-up: BTN opens 2.5bb, BB calls",
+     "ip":  "BTN/BTN_2.5bb.txt",
+     "oop": "BB/BTN_2.5bb_BB_Call.txt",
+     "pot": 5.0, "stack": 97.5},
+    {"name": "HU_limp_raised",
+     "preflop": "heads-up: BTN limps, BB raises to 4bb, BTN calls",
+     "ip":  "BTN/BTN_Limp_BB_4.0bb_BTN_Call.txt",
+     "oop": "BB/BTN_Limp_BB_4.0bb.txt",
+     "pot": 8.0, "stack": 96.0},
+    {"name": "HU_limped",
+     "preflop": "heads-up: BTN limps, BB checks",
+     "ip":  "BTN/BTN_Limp.txt",
+     "oop": "BB/BTN_Limp_BB_Check.txt",
+     "pot": 2.0, "stack": 99.0},
+]
+
 
 def process_clusters(only=None):
     range_base = "ranges/qb_ranges/100bb 2.5x 500rake"
@@ -211,6 +271,15 @@ def process_clusters(only=None):
          "pot": 18.0, "stack": 91.0},
     ]
 
+    # The heads-up set reads its ranges from a different pack, so each scenario carries
+    # its own base rather than the loop assuming one.
+    for s in scenarios:
+        s.setdefault("range_base", range_base)
+    for s in HU_SCENARIOS:
+        s.setdefault("range_base", HU_RANGE_BASE)
+        s.setdefault("caveat", APPROXIMATE_RANGES_CAVEAT)
+    scenarios = scenarios + HU_SCENARIOS
+
     if only:
         scenarios = [s for s in scenarios if s["name"] in only]
         if not scenarios:
@@ -234,8 +303,9 @@ def process_clusters(only=None):
         s_name = scenario["name"]
         print(f"\nProcessing Scenario: {s_name}  ({scenario['preflop']})")
 
-        ip_path = os.path.join(range_base, scenario["ip"])
-        oop_path = os.path.join(range_base, scenario["oop"])
+        s_range_base = scenario["range_base"]
+        ip_path = os.path.join(s_range_base, scenario["ip"])
+        oop_path = os.path.join(s_range_base, scenario["oop"])
 
         if not os.path.exists(ip_path) or not os.path.exists(oop_path):
             print(f"  Missing range files for {s_name}, skipping.")
@@ -246,7 +316,7 @@ def process_clusters(only=None):
 
         scenario_dir = os.path.join(output_base, s_name)
         os.makedirs(scenario_dir, exist_ok=True)
-        write_scenario_note(scenario_dir, scenario, range_base)
+        write_scenario_note(scenario_dir, scenario, s_range_base)
 
         for i, (weight, board) in enumerate(flops):
             board_slug = board.replace(",", "_")

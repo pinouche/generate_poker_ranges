@@ -561,6 +561,53 @@ def test_hu_postflop_unsupported():
         hu.advise(state)
 
 
+def hu_bb_facing_limp(hand, stack_bb=10.0):
+    """Hero in the BB; the SB (on the button) completed to the big blind."""
+    return table('villain_left', 'preflop',
+                 hero=player(hand, stack=stack_bb * BB - 2, bet=2),
+                 left=player(stack=stack_bb * BB - 2, bet=2),         # limped
+                 right=busted_seat())
+
+
+def test_hu_bb_vs_limp_checks_rather_than_refusing():
+    r = hu.advise(hu_bb_facing_limp(['7h', '2s']))
+    show('HU BB vs a 10bb limp with 72o', r)
+    assert r['hero_seat'] == 'BB'
+    assert top_action(r) == 'Check', "checking is free and closes the action"
+    assert r['to_call'] == 0.0
+    assert any('limp branch' in w for w in r['warnings']), \
+        "the answer is a floor, not a solved node, and must say so"
+
+
+def test_hu_bb_vs_limp_flags_jam_candidates_only_from_the_push_range():
+    strong = hu.advise(hu_bb_facing_limp(['Ah', 'Ad']))
+    assert any('candidate to jam' in w for w in strong['warnings']), \
+        "AA is in the first-in jam range at 10bb"
+    assert any('upper bound' in w for w in strong['warnings']), \
+        "the push range is drawn against folding, not against a free flop"
+    assert top_action(strong) == 'Check', "the floor stands; the jam is only flagged"
+
+    weak = hu.advise(hu_bb_facing_limp(['7h', '2s']))
+    assert not any('candidate to jam' in w for w in weak['warnings'])
+
+
+def test_hu_bb_vs_limp_deep_skips_the_push_range_entirely():
+    r = hu.advise(hu_bb_facing_limp(['Ah', 'Ad'], stack_bb=60.0))
+    assert not any('candidate to jam' in w for w in r['warnings']), \
+        "60bb is nowhere near jam-or-fold; the push table has nothing to say"
+    assert any('past jam-or-fold territory' in w for w in r['warnings'])
+
+
+def test_hu_sb_all_in_under_a_big_blind_is_not_read_as_a_limp():
+    # A 1bb SB posts 0.5 and jams the other 0.5: total bet is one blind, the same size
+    # as a limp. Hero's posted blind covers it either way, so there is no decision --
+    # and the reason must say that rather than blaming a missing limp branch.
+    state = hu_bb_facing_limp(['Ah', 'Ad'])
+    state['villain_left'] = player(stack=0.0, bet=BB)
+    with pytest.raises(Unsupported, match='nothing to decide'):
+        hu.advise(state)
+
+
 # ---------------------------------------------------------------------------
 # The HTTP endpoint: same spots, through api.py's models and conversion.
 # ---------------------------------------------------------------------------
@@ -649,12 +696,53 @@ def test_api_heads_up_postflop_falls_back_to_heuristic(client):
     assert a['recommendation']['kind'] in ('BET', 'ALLIN'), "top set bets"
     assert any('heuristic' in w for w in a['warnings'])
 
-    # Without board cards the heuristic cannot answer either, so the original hu
-    # reason survives as the 422 detail.
+    # Without board cards the heuristic cannot answer either, so the reason from the
+    # solve lookup survives as the 422 detail.
     state['board'] = []
     resp = client.post('/advise', json=state)
     assert resp.status_code == 422
-    assert 'postflop' in resp.json()['detail']
+    assert 'board cards' in resp.json()['detail']
+
+
+def test_hu_postflop_never_matches_a_three_handed_scenario():
+    """The whole point of a separate heads-up scenario list.
+
+    Heads-up the seats are named BTN and BB and the BTN acts last. Three-handed the seat
+    pair {SB, BB} also exists but the SB acts FIRST postflop, so a heads-up spot that
+    matched SB_vs_BB would be handed a solve with position reversed -- confidently wrong
+    advice, which is worse than no advice.
+    """
+    state = hu_sb_first_in(['Ah', 'Ad'])
+    state['street'] = 'flop'
+    state['board'] = ['7h', '2c', '9d']
+    seats, candidates = postflop.scenarios_for(state, 'villain_left')
+
+    assert seats['hero'] == 'BTN', "heads-up the dealer holds the button postflop"
+    assert seats['villain_left'] == 'BB'
+    assert candidates, "heads-up spots must have scenarios to match"
+    assert all(s['name'].startswith('HU_') for s in candidates), \
+        f"three-handed solve leaked into a heads-up spot: {[s['name'] for s in candidates]}"
+    assert all(s['oop'] == 'BB' and s['ip'] == 'BTN' for s in candidates), \
+        "every heads-up pot has the BB out of position and the button in position"
+
+
+def test_three_handed_still_picks_three_handed_scenarios():
+    state = btn_on_flop(['Ah', 'As'])
+    seats, candidates = postflop.scenarios_for(state, 'villain_right')
+    assert candidates and not any(s['name'].startswith('HU_') for s in candidates), \
+        "a live third player must never reach the heads-up solves"
+
+
+def test_hu_scenario_answers_carry_their_provenance():
+    """These solves rest on hand-written ranges; no answer from them may hide that."""
+    for scenario in postflop.HU_SCENARIOS:
+        warnings = postflop.scenario_warnings(scenario)
+        assert any('hand-written' in w for w in warnings), scenario['name']
+        if 'limp' in scenario['name']:
+            assert any('weak limper' in w for w in warnings), scenario['name']
+    for scenario in postflop.SCENARIOS:
+        assert postflop.scenario_warnings(scenario) == [], \
+            "solver-derived scenarios must not inherit the heads-up caveat"
 
 
 # ---------------------------------------------------------------------------

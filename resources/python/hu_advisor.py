@@ -16,9 +16,10 @@ game -- unexploitable as long as you never do anything but jam or fold -- but a
 raise-based strategy earns more, so deep spots get an answer with a warning attached.
 
 Covered nodes: the SB first in (jam or fold) and the BB facing a jam (call or fold).
-That is the whole game tree of jam-or-fold poker. Everything else -- limps, raises
-smaller than all-in, any postflop street -- is Unsupported, the same way a missing
-chart is in the 3-handed pack.
+That is the whole game tree of jam-or-fold poker. One node off that tree is answered
+anyway -- the BB facing a limp, where checking is free and needs no table (see
+advise_vs_limp). Everything else -- raises smaller than all-in, any postflop street --
+is Unsupported, the same way a missing chart is in the 3-handed pack.
 
 Usage:
     python3 resources/python/hu_advisor.py state.json
@@ -100,6 +101,48 @@ def is_heads_up(state):
     return any(busted(state.get(v)) for v in VILLAINS)
 
 
+def advise_vs_limp(state, seats, villain, hand, bb, sb, eff_bb):
+    """Answer the BB facing a limp -- the one off-tree node worth answering anyway.
+
+    Jam-or-fold has no limp branch, but hero closes the action here and a check is free,
+    so CHECK is a floor no table is needed to justify: folding a free flop is the only
+    blunder actually available. Jamming over the limp is often better than checking, and
+    the push table is consulted to say WHICH hands are candidates -- but only as an upper
+    bound, never as the answer. That table's jam/fold line is drawn against folding, worth
+    -sb; here the alternative is a free flop, worth far more, so the bar a jam must clear
+    is higher and the true iso-jam range is tighter than the table's. Where exactly it
+    lands is not something these two tables know, so we do not pretend a number.
+    """
+    warnings = [
+        "Limped pot: the SB completed to the big blind rather than jamming, and the "
+        "jam-or-fold tables have no limp branch -- the answer below is a practical floor, "
+        "not a solved node.",
+        "Recommending CHECK: you close the action in the big blind and see the flop for "
+        "free. Never fold here.",
+    ]
+    row_stack = eff_bb
+    if eff_bb <= PUSH_FOLD_MAX_BB:
+        freq, row_stack, _ = frequency(PUSH_TABLE, eff_bb, hand)
+        if freq > 0.5:
+            warnings.append(
+                f"{hand} is in the SB's first-in jam range at {row_stack:g}bb, so it is a "
+                f"candidate to jam over the limp instead. Treat that range as an upper "
+                f"bound: it is drawn against folding (worth -{sb / bb:g}bb), while here you "
+                f"give up a free flop, so the hands worth jamming are a subset of it.")
+    else:
+        warnings.append(
+            f"Effective stack is {eff_bb:.0f}bb, past jam-or-fold territory entirely; "
+            f"play the flop rather than looking for a shove.")
+
+    return {
+        'seats': seats, 'hero_seat': 'BB', 'hand': hand, 'bb': bb, 'sb': sb,
+        'prior': [(seats[villain], 'Limp')], 'strategy': [('Check', 1.0, None)],
+        'eff_bb': eff_bb, 'row_stack': row_stack,
+        'stack_bb': (state['hero']['stack'] + state['hero']['bet']) / bb,
+        'to_call': 0.0, 'warnings': warnings,
+    }
+
+
 def advise(state, bb_override=None):
     live = [v for v in VILLAINS if not busted(state.get(v))]
     if len(live) != 1:
@@ -150,12 +193,20 @@ def advise(state, bb_override=None):
     else:
         if not state[villain].get('active', True):
             raise Unsupported("the SB folded; the pot is hero's, nothing to decide")
+        all_in = state[villain]['stack'] <= 1e-9
+        # Checked before the size tests: an SB with a stack of one blind or less is
+        # all-in for no more than the big blind, so bet size alone cannot tell a jam
+        # from a limp -- and it does not matter, because hero's posted blind already
+        # covers either one.
+        if all_in and vill_bet <= bb + 1e-9:
+            raise Unsupported(f"the SB is all-in for {vill_bet / bb:.2f}bb, which hero's "
+                              f"posted big blind already covers; the action is closed and "
+                              f"the hand is a showdown, nothing to decide")
         if vill_bet <= sb + 1e-9:
             raise Unsupported("the SB has not acted yet; it is not hero's turn")
         if vill_bet <= bb + 1e-9:
-            raise Unsupported("the SB limped; the tables are jam-or-fold and have no "
-                              "limp branch")
-        if state[villain]['stack'] > 1e-9:
+            return advise_vs_limp(state, seats, villain, hand, bb, sb, eff_bb)
+        if not all_in:
             raise Unsupported(f"the SB raised to {vill_bet / bb:.1f}bb without being "
                               f"all-in; the tables only answer a jam")
         table_name, act, prior = CALL_TABLE, 'Call', [('SB', 'AllIn')]

@@ -270,9 +270,13 @@ def advise_endpoint(state: GameState) -> Advice:
     try:
         if hu.is_heads_up(state.model_dump()):
             # A busted third player makes this true heads-up: none of the 3-handed
-            # material applies, so route every street to the push/fold tables --
-            # hu.advise itself rejects postflop, with the reason why.
-            advice = preflop_advice(state, hu.advise)
+            # material applies. Preflop goes to the push/fold tables; postflop to the
+            # heads-up solves, which are a separate scenario list precisely because the
+            # SB is the button here and acts last (see postflop_advisor.HU_SCENARIOS).
+            if state.street == "preflop":
+                advice = preflop_advice(state, hu.advise)
+            else:
+                advice = postflop_advice(state)
         elif state.street == "preflop":
             advice = preflop_advice(state)
         else:

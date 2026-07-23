@@ -70,6 +70,40 @@ SCENARIOS = [
      'preflop': 'BTN folds, SB opens 3.0bb, BB 3bets to 9bb, SB calls'},
 ]
 
+# The same five fields for true heads-up, after the third player busted. Kept in a
+# separate list because the seat pair {SB, BB} appears in BOTH sets and means different
+# things: three-handed the SB acts first postflop, heads-up the SB IS the button and acts
+# last. Merging them would let a heads-up spot match SB_vs_BB, which is the exact
+# position-reversal error this whole path exists to avoid. `scenarios_for` picks the list
+# by table size; nothing else should reach past it.
+#
+# Every heads-up pot has the BB out of position and the BTN in position, so there is only
+# one geometry and the pot alone separates the four.
+HU_SCENARIOS = [
+    {'name': 'HU_limped', 'oop': 'BB', 'ip': 'BTN', 'pot': 2.0, 'stack': 99.0,
+     'preflop': 'heads-up: BTN limps, BB checks'},
+    {'name': 'HU_BTN_vs_BB', 'oop': 'BB', 'ip': 'BTN', 'pot': 5.0, 'stack': 97.5,
+     'preflop': 'heads-up: BTN opens 2.5bb, BB calls'},
+    {'name': 'HU_limp_raised', 'oop': 'BB', 'ip': 'BTN', 'pot': 8.0, 'stack': 96.0,
+     'preflop': 'heads-up: BTN limps, BB raises to 4bb, BTN calls'},
+    {'name': 'HU_BB_3bet', 'oop': 'BB', 'ip': 'BTN', 'pot': 20.0, 'stack': 90.0,
+     'preflop': 'heads-up: BTN opens 2.5bb, BB 3bets to 10bb, BTN calls'},
+]
+
+# Solves built on hand-written ranges rather than solver output, so every answer they
+# produce carries this. See resources/python/build_hu_ranges.py.
+HU_RANGE_WARNING = (
+    "Heads-up solve: its preflop ranges are hand-written approximations, not solver "
+    "output. The strategy below is exact for those ranges, which is not the same as "
+    "being right.")
+HU_LIMP_WARNING = (
+    "Limped-pot solve: it assumes a weak limper (limps wide, raises only premiums). "
+    "Against someone who limps a balanced range it will have you attacking too hard.")
+
+
+def all_scenarios():
+    return SCENARIOS + HU_SCENARIOS
+
 CARD_RE = re.compile(r'^[AKQJT98765432][cdhs]$')
 
 
@@ -419,6 +453,48 @@ def hero_and_villain(state):
     return live[0]
 
 
+def hu_seats(state, villain):
+    """Seats for true heads-up: the dealer posts the small blind AND holds the button.
+
+    seats_of() cannot be used here -- it walks three chairs from the dealer and would
+    hand the busted seat a position. Heads-up there are two seats, and the dealer's is
+    both the SB preflop and the BTN postflop. We name it BTN because these solves are
+    postflop and the whole point is who acts last.
+    """
+    dealer = state['dealer']
+    if dealer == 'hero':
+        return {'hero': 'BTN', villain: 'BB'}
+    if dealer == villain:
+        return {'hero': 'BB', villain: 'BTN'}
+    raise Unsupported(f"the dealer ({dealer}) has busted; the button cannot be on an "
+                      f"empty seat")
+
+
+def scenarios_for(state, villain):
+    """(seats, candidate scenarios) for this table -- heads-up or three-handed.
+
+    The two lists are never mixed: see the note on HU_SCENARIOS for why that would be a
+    correctness bug rather than just noise.
+    """
+    import hu_advisor
+    if hu_advisor.is_heads_up(state):
+        seats = hu_seats(state, villain)
+        return seats, HU_SCENARIOS
+    seats = seats_of(state)
+    pair = {seats['hero'], seats[villain]}
+    return seats, [s for s in SCENARIOS if {s['oop'], s['ip']} == pair]
+
+
+def scenario_warnings(scenario):
+    """The caveats a scenario's own provenance forces onto every answer from it."""
+    if not scenario['name'].startswith('HU_'):
+        return []
+    warnings = [HU_RANGE_WARNING]
+    if 'limp' in scenario['name']:
+        warnings.append(HU_LIMP_WARNING)
+    return warnings
+
+
 def match_street_node(root, hero_player, hero_bet, vill_bet):
     """The tree node hero is standing at, from the two bets in front of the players.
 
@@ -459,7 +535,7 @@ def find_turn_root(state, candidates, flop, turn_pot, remembered=None):
     indistinguishable from a snapshot), and whether the line was observed.
     """
     if remembered:
-        scenario = next(s for s in SCENARIOS if s['name'] == remembered['scenario'])
+        scenario = next(s for s in all_scenarios() if s['name'] == remembered['scenario'])
         need = (turn_pot - scenario['pot']) / 2
         board = (remembered['stem'], remembered['smap'], remembered['exact'])
         data = load_solve(os.path.join(SOLVE_BASE, scenario['name'],
@@ -511,11 +587,10 @@ def advise(state, bb_override=None):
     if street not in ('flop', 'turn'):
         raise Unsupported(f"unknown street {state.get('street')!r}")
 
-    seats = seats_of(state)
     villain = hero_and_villain(state)
+    seats, candidates = scenarios_for(state, villain)
     hero_seat, vill_seat = seats['hero'], seats[villain]
-    candidates = [s for s in SCENARIOS if {s['oop'], s['ip']} == {hero_seat, vill_seat}]
-    if not candidates:   # cannot happen 3-handed, but fail loudly rather than crash
+    if not candidates:   # cannot happen at either table size, but fail loudly not crash
         raise Unsupported(f"no scenario covers {hero_seat} vs {vill_seat}")
 
     bb = big_blind(state, bb_override)
@@ -568,6 +643,10 @@ def advise(state, bb_override=None):
         root = (chance.get('dealcards') or {}).get(card_str(turn_card))
         if not root:
             raise Unsupported(f"the solve has no turn subtree for {card_str(turn_card)}")
+
+    # Where the solve came from qualifies the whole answer rather than one detail of it,
+    # so it goes ahead of the snap/mismatch notes below.
+    warnings = scenario_warnings(scenario) + warnings
 
     solved_flop = tuple(parse_card(t) for t in stem.split('_'))
     if not exact:
