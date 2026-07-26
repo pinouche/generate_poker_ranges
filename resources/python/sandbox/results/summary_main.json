@@ -1,0 +1,142 @@
+{
+  "meta": {
+    "hands": 12000,
+    "seed": 1,
+    "villain_name": "heuristic",
+    "advisor_name": "advisor[sample]",
+    "mode": "sample",
+    "stack_bb": 100.0,
+    "big_blind": 20,
+    "solves": true,
+    "all_in_ev_runout": true,
+    "bet_fractions": [
+      0.25,
+      0.33,
+      0.5,
+      0.66,
+      0.75,
+      1.0,
+      1.5
+    ],
+    "raise_multipliers": [
+      2.0,
+      2.2,
+      2.5,
+      3.0,
+      3.5,
+      4.4,
+      6.0
+    ],
+    "seconds": 5034.0
+  },
+  "advisor": {
+    "bb_per_100": 22.79218174603175,
+    "ci_half_width": 42.494323042527505,
+    "significant": false,
+    "deals": 4000
+  },
+  "advisor_unpaired": {
+    "hands": 12000,
+    "bb_per_100": 22.792181746031744,
+    "ci_half_width": 52.31059956294286,
+    "significant": false
+  },
+  "villain_per_seat": {
+    "hands": 24000,
+    "bb_per_100": -11.396090873015872,
+    "ci_half_width": 38.82027532682221,
+    "significant": false
+  },
+  "advisor_by_position": {
+    "BTN": {
+      "hands": 4000,
+      "bb_per_100": 28.3731369047619,
+      "ci_half_width": 91.82270383004332,
+      "significant": false
+    },
+    "SB": {
+      "hands": 4000,
+      "bb_per_100": 17.350604761904755,
+      "ci_half_width": 78.12074197981002,
+      "significant": false
+    },
+    "BB": {
+      "hands": 4000,
+      "bb_per_100": 22.65280357142857,
+      "ci_half_width": 100.48570750687436,
+      "significant": false
+    }
+  },
+  "showdown_rate": 0.41825,
+  "street_reached": {
+    "river": 5960,
+    "flop": 2119,
+    "preflop": 2430,
+    "turn": 1491
+  },
+  "decisions": {
+    "total": 30319,
+    "by_source": {
+      "preflop_chart": 12181,
+      "postflop_solve": 7623,
+      "heuristic": 10503,
+      "preflop_equity": 12
+    },
+    "by_source_share": {
+      "preflop_chart": 0.40176127180975624,
+      "postflop_solve": 0.25142649823542995,
+      "heuristic": 0.3464164385368911,
+      "preflop_equity": 0.0003957914179227547
+    },
+    "by_street": {
+      "preflop": {
+        "preflop_chart": 12181,
+        "preflop_equity": 12
+      },
+      "flop": {
+        "postflop_solve": 4893,
+        "heuristic": 2981
+      },
+      "turn": {
+        "postflop_solve": 2730,
+        "heuristic": 3214
+      },
+      "river": {
+        "heuristic": 4308
+      }
+    },
+    "by_kind": {
+      "RAISE": 3984,
+      "BET": 3954,
+      "CHECK": 11532,
+      "FOLD": 7052,
+      "CALL": 3060,
+      "ALLIN": 737
+    },
+    "mixed_node_share": 0.19182690721989512,
+    "substituted_kind": 0,
+    "sizing_snap_bb": {
+      "n": 7938,
+      "mean": 0.4755479969765684,
+      "median": 0.0,
+      "max": 40.0
+    }
+  },
+  "warnings": {
+    "board_snapped": 6647,
+    "no_solve": 10503,
+    "random_hand_equity": 10503,
+    "limped_pot": 4550,
+    "iso_approximation": 728,
+    "never_bluffs": 5025,
+    "pot_mismatch": 3266,
+    "sizing_snapped": 3012,
+    "stack_mismatch": 76,
+    "incomplete_options": 62,
+    "close_decision": 892,
+    "hand_resettled": 495,
+    "ambiguous_flop_line": 363,
+    "turn_resettled": 116,
+    "no_preflop_chart": 12
+  }
+}

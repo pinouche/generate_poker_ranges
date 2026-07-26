@@ -447,6 +447,100 @@ def test_turn_line_inferred_from_pot():
 
 
 # ---------------------------------------------------------------------------
+# Postflop: turn cards the solver resolved by suit isomorphism.
+#
+# `set_dump_rounds 2` writes a subtree under all 52 `dealcards` keys, but the solver
+# resolves some turn cards by isomorphism and writes a STUB in their place: node_type,
+# player, actions, childrens, and no strategy. A stub is shaped like a tree, so it
+# survives `if not root` and used to reach `node['strategy']` as a KeyError -- a 500
+# rather than a 422, on ~30% of turn nodes. dumped_suit_map redirects the turn onto an
+# interchangeable suit that was dumped; has_strategy is the backstop.
+#
+# Qc 8c 4c is monotone and in the subset, and every spade turn on it is a stub.
+# ---------------------------------------------------------------------------
+
+MONOTONE = ('Qc', '8c', '4c')
+
+
+def btn_on_turn(hand, turn, board=MONOTONE, flop_bet=2.0):
+    """Hero IP on the turn, after a flop bet and call of `flop_bet` bb each."""
+    state = btn_on_flop(hand, board=board,
+                        pot=FLOP_POT + 2 * flop_bet * BB)
+    state['street'] = 'turn'
+    state['board'].append(card(turn))
+    return state
+
+
+def redirected_to(r):
+    """The suit the turn was actually played as, out of the redirect warning."""
+    import re
+    for w in r['warnings']:
+        found = re.search(r'played as ([AKQJT98765432][cdhs])', w)
+        if found:
+            return found.group(1)
+    return None
+
+
+def test_turn_on_an_isomorphic_suit_is_answered():
+    r = postflop.advise(btn_on_turn(['Tc', '9h'], 'As'))
+    show('BTN on Qc8c4c, turn As (a suit the solve stubbed)', r)
+    check_distribution(r)
+    assert redirected_to(r), f"the redirect should say so, got {r['warnings']}"
+
+
+def test_turn_suit_redirect_lands_on_the_same_spot():
+    """The redirect must be a relabelling, not an approximation.
+
+    Hero is given Tc 9h -- a club and a heart -- so that exchanging spades for diamonds
+    fixes hero's cards AND the monotone club board. Under that relabelling a spade turn
+    and a diamond turn are literally the same node, so the two answers have to be
+    identical, not merely close. The club ace is a fourth club and must differ.
+    """
+    answers = {suit: weights(postflop.advise(btn_on_turn(['Tc', '9h'], 'A' + suit)))
+               for suit in 'sdc'}
+    print("\n  CHECK by turn suit on Qc8c4c, hero Tc9h: " +
+          '  '.join(f"A{s} {w.get('CHECK', 0.0):.4f}" for s, w in answers.items()))
+    assert answers['s'] == answers['d'], (
+        "As and Ad are one node under the s<->d relabelling that fixes this board and "
+        f"this hand; got {answers['s']} vs {answers['d']}")
+    assert abs(answers['c'].get('CHECK', 0.0) - answers['d'].get('CHECK', 0.0)) > 0.01, \
+        f"the club ace completes the flush texture and must differ, got {answers}"
+
+
+def test_hero_suits_follow_the_turn_redirect():
+    """Moving the turn's suit without moving hero's would destroy the one relationship
+    that matters most on a turn card: whether hero's hand shares its suit."""
+    r = postflop.advise(btn_on_turn(['9s', '7s'], 'Ks'))
+    show('BTN with 9s7s on Qc8c4c, turn Ks (redirected)', r)
+    turn = redirected_to(r)
+    assert turn, f"this turn should have been redirected, got {r['warnings']}"
+    solved = r['hand_solved']
+    assert solved[1] == solved[3], f"hero's two cards stay suited, got {solved}"
+    assert solved[1] == turn[1], (
+        f"hero held the turn's suit, so the translation must keep that: hero is "
+        f"{solved} on a {turn} turn")
+
+
+def test_has_strategy_rejects_a_stub():
+    real = {'node_type': 'action_node', 'player': 0, 'actions': ['CHECK'],
+            'strategy': {'actions': ['CHECK'], 'strategy': {}}}
+    stub = {'node_type': 'action_node', 'player': 0, 'actions': ['CHECK'],
+            'childrens': {}}
+    assert postflop.has_strategy(real)
+    assert not postflop.has_strategy(stub)
+    assert not postflop.has_strategy(None)
+
+
+def test_dumped_suit_map_leaves_a_board_suit_alone():
+    """A suit the flop holds carries the flush relationship and can never be swapped."""
+    flop = [postflop.parse_card(c) for c in ('Qc', '8c', '4c')]
+    identity = {s: s for s in postflop.SUITS}
+    chance = {'dealcards': {}}   # nothing dumped at all
+    smap, changed = postflop.dumped_suit_map(('A', 'c'), identity, chance, set(flop))
+    assert not changed and smap == identity, "clubs are on the board; not interchangeable"
+
+
+# ---------------------------------------------------------------------------
 # Postflop: spots the solves cannot answer must refuse, not guess.
 # ---------------------------------------------------------------------------
 

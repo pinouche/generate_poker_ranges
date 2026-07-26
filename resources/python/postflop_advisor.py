@@ -244,6 +244,58 @@ def place_card(card, smap, taken):
     raise Unsupported(f"no room for {card_str(card)} on the solved board")
 
 
+def has_strategy(node):
+    """Whether a dumped subtree actually holds a strategy, or is only shaped like one.
+
+    `set_dump_rounds 2` writes a turn subtree under every one of the 52 dealcards keys,
+    but the solver resolves some turn cards by suit isomorphism and writes a **stub** in
+    their place: node_type, player, actions and childrens, and no strategy. A stub is
+    structurally a tree and passes a plain `if not node`, so it has to be asked directly.
+    """
+    return isinstance(node, dict) and 'strategy' in node
+
+
+def dumped_suit_map(turn, smap, chance, solved_flop):
+    """Steer the turn card onto a suit the solve actually dumped a strategy for.
+
+    Around 30% of turn subtrees are stubs, and which ones depends on the board: on a
+    monotone club flop every spade turn is a stub, because a spade turn is the same
+    strategic problem as a diamond or a heart turn and the solver only solved one of
+    them. That equivalence is also the repair -- a suit appearing nowhere on the flop is
+    interchangeable with any other suit appearing nowhere on the flop, while a suit the
+    flop holds carries the (backdoor) flush relationship and can never be swapped.
+
+    The swap is applied to the suit MAP rather than to the card, so it carries through to
+    hero's cards as well: translating the turn to a diamond while leaving hero's spade a
+    spade would break the one relationship that matters most on a turn card, whether
+    hero's hand shares its suit.
+
+    Returns (suit map, whether it changed). An unchanged map means either the turn was
+    already fine or nothing interchangeable was dumped either, and the caller's
+    `has_strategy` check is what refuses the spot.
+    """
+    dealcards = chance.get('dealcards') or {}
+    rank, suit = turn
+    target = smap[suit]
+    if has_strategy(dealcards.get(card_str((rank, target)))):
+        return smap, False
+
+    board_suits = {s for _, s in solved_flop}
+    if target in board_suits:
+        return smap, False
+
+    for alt in SUITS:
+        if alt == target or alt in board_suits:
+            continue
+        if not has_strategy(dealcards.get(card_str((rank, alt)))):
+            continue
+        # Both suits are absent from the solved flop, so exchanging them leaves that
+        # board untouched: this is still a relabelling of the same solved problem.
+        swap = {target: alt, alt: target}
+        return {real: swap.get(solved, solved) for real, solved in smap.items()}, True
+    return smap, False
+
+
 def map_hero(cards, smap, taken):
     """Hero's two cards in the solved board's world.
 
@@ -635,14 +687,26 @@ def advise(state, bb_override=None):
             warnings.append(
                 f"The flop line is ambiguous: the pot also matches [{lines}]. Different "
                 f"lines reach different turn strategies; showing the shortest match.")
-        turn_card, moved = place_card(board[3], smap, set(parse_card(t) for t in
-                                                          stem.split('_')))
+        solved_cards = set(parse_card(t) for t in stem.split('_'))
+        smap, redirected = dumped_suit_map(board[3], smap, chance, solved_cards)
+        turn_card, moved = place_card(board[3], smap, solved_cards)
+        if redirected:
+            warnings.append(
+                f"Turn suit redirected: the solve dumped no strategy for this turn's "
+                f"suit (the solver resolved it by isomorphism), so "
+                f"{card_str(board[3])} is played as {card_str(turn_card)} -- the same "
+                f"card strategically, since neither suit appears on the flop.")
         if moved:
             warnings.append(f"Turn card resettled: {card_str(board[3])} had no clean "
                             f"suit on the solved board, playing it as {card_str(turn_card)}.")
         root = (chance.get('dealcards') or {}).get(card_str(turn_card))
         if not root:
             raise Unsupported(f"the solve has no turn subtree for {card_str(turn_card)}")
+        if not has_strategy(root):
+            raise Unsupported(
+                f"the solve holds only a stub for a {card_str(turn_card)} turn -- the "
+                f"solver resolved that card by isomorphism and dumped no strategy, and "
+                f"no interchangeable suit was dumped either")
 
     # Where the solve came from qualifies the whole answer rather than one detail of it,
     # so it goes ahead of the snap/mismatch notes below.
@@ -680,7 +744,14 @@ def advise(state, bb_override=None):
                         f"from what is actually in front of the players.")
 
     combo = card_str(hero_solved[0]) + card_str(hero_solved[1])
-    strat = node['strategy']
+    # The backstop to dumped_suit_map: a stubbed subtree should have been redirected
+    # away from above, but a stub reached any other way is a spot we cannot answer, not
+    # a crash. Without this the KeyError escapes as a 500 rather than a 422.
+    strat = node.get('strategy')
+    if strat is None:
+        raise Unsupported(
+            "the solve dumped no strategy at this node; it is a stub the solver wrote "
+            "for a card it resolved by isomorphism")
     probs = (strat['strategy'].get(combo)
              or strat['strategy'].get(card_str(hero_solved[1]) + card_str(hero_solved[0])))
     if probs is None:
