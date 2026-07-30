@@ -220,10 +220,12 @@ By default the log is one block per hand — the action-so-far line and the opti
 nothing else:
 
 ```
-BTN opens 2.5bb, SB folds, BB calls | flop Kh 6c 6h: hero first to act
+A♠ Q♥  BTN opens 2.5bb, SB folds, BB calls | flop Kh 6c 6h: hero first to act
 CHECK          86.1%  <- recommended
 BET 40 (2bb)   13.9%
 ```
+
+Hero's cards lead the block: they are what marks where one hand ends and the next begins.
 
 Add `-e ADVISOR_VERBOSE=1` to `docker run` for the full picture — the incoming game
 state, the `warnings`, and uvicorn's per-request access line — when a spot looks wrong and
@@ -252,7 +254,7 @@ schema can grow without breaking it):
 ```
 
 ```json
-{ "hand": "AQo", "hero_seat": "BTN", "action_so_far": "folds to hero",
+{ "hand": "AQo", "hero_cards": "A♥ Q♠", "hero_seat": "BTN", "action_so_far": "folds to hero",
   "options": [ {"action":"RAISE to 50 (2.5bb)", "kind":"RAISE", "chips":50.0, "frequency":1.0},
                {"action":"FOLD", "kind":"FOLD", "chips":null, "frequency":0.0} ],
   "recommendation": {"action":"RAISE to 50 (2.5bb)", "kind":"RAISE", "chips":50.0, "frequency":1.0},
@@ -261,7 +263,9 @@ schema can grow without breaking it):
 ```
 
 `chips` is the number to act on, `kind` is machine-readable, and mixed strategies come back
-as frequencies with `pure: false` rather than being rounded to a single action.
+as frequencies with `pure: false` rather than being rounded to a single action. `hand` is
+the chart class (the same for every hand dealt from that cell); `hero_cards` is the actual
+holding with suit symbols, which is what identifies the hand you are in.
 
 Postflop the answer has the same shape, with two more `kind`s (`CHECK`, `BET`), and the
 `action_so_far` names the whole line the state implies, e.g.

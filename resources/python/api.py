@@ -118,6 +118,8 @@ class Option(BaseModel):
 
 class Advice(BaseModel):
     hand: str
+    hero_cards: str = Field(
+        "", description="hero's two cards with suit symbols, e.g. 'A♠ Q♥'")
     hero_seat: str
     seats: dict[str, str]
     action_so_far: str
@@ -170,6 +172,20 @@ def cards_of(p: Player) -> str:
     return "".join(f"{c.rank}{c.suit}" for c in p.cards) or "--"
 
 
+SUITS = {"s": "♠", "h": "♥", "d": "♦", "c": "♣"}
+
+
+def pretty_cards(cards: list[Card]) -> str:
+    """'A♠ Q♥' -- the holding as a player would read it, not as the table encodes it.
+
+    Preflop the `hand` field is a chart class ('AQo'), which is the same for every hand
+    dealt from that cell; the actual cards are what tells one hand apart from the next in
+    a log that scrolls past live. An unknown suit letter is passed through rather than
+    dropped, so odd input still shows the rank it came with.
+    """
+    return " ".join(f"{c.rank.upper()}{SUITS.get(c.suit.lower(), c.suit)}" for c in cards)
+
+
 def option_rows(a: Advice) -> list[str]:
     width = max(len(o.action) for o in a.options)
     return [f"{o.action:<{width}}  {o.frequency:>6.1%}"
@@ -186,9 +202,11 @@ def render_advice(a: Advice) -> str:
 
 
 def render_advice_compact(a: Advice) -> str:
-    # The quiet default: the spot in one line, then the chart's answer. No game-state
-    # echo, no warnings, no seat header -- just what a player glances at each hand.
-    return INDENT.join([a.action_so_far, *option_rows(a)])
+    # The quiet default: hero's cards and the spot in one line, then the chart's answer.
+    # No game-state echo, no warnings, no seat header -- just what a player glances at
+    # each hand. The cards lead because they are what marks where one hand ends and the
+    # next begins; VERBOSE gets them from the game-state echo instead.
+    return INDENT.join([f"{a.hero_cards}  {a.action_so_far}", *option_rows(a)])
 
 
 @app.get("/health")
@@ -289,6 +307,10 @@ def advise_endpoint(state: GameState) -> Advice:
             # that names the spot, so it is the one worth reporting.
             log.info("POST /advise -> 422  no chart for this spot: %s", e)
             raise HTTPException(status_code=422, detail=f"No chart for this spot: {e}")
+
+    # Filled in here rather than in the three builders: it is the request's own hero
+    # cards, unchanged by which chart, solve or heuristic answered.
+    advice.hero_cards = pretty_cards(state.hero.cards)
 
     log.info(render_advice(advice) if VERBOSE else render_advice_compact(advice))
     return advice

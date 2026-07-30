@@ -10,8 +10,11 @@ Run with output visible (each test prints the spot and the recommendation it got
     pytest resources/python/test_advisors.py -v -s
 """
 
+import itertools
 import os
 import sys
+import time
+from fractions import Fraction
 
 import pytest
 
@@ -719,6 +722,7 @@ def test_api_preflop(client):
     a = resp.json()
     print(f"\n  API: BTN first in with AKo  =>  {a['recommendation']['action']}")
     assert a['hand'] == 'AKo'
+    assert a['hero_cards'] == 'A♥ K♠', "the chart class is AKo; the cards say which AKo"
     assert a['recommendation']['kind'] == 'RAISE'
     assert a['recommendation']['chips'] == 5.0, "2.5bb at a 2-chip blind is 5 chips"
     assert a['pure'] is True
@@ -744,6 +748,7 @@ def test_api_river_falls_back_to_heuristic(client):
     a = resp.json()
     print(f"\n  API: river with AA (heuristic)  =>  {a['recommendation']['action']}")
     assert a['recommendation']['kind'] in ('BET', 'ALLIN'), "top set on a blank river bets"
+    assert a['hero_cards'] == 'A♥ A♠', "the fallback answer carries the cards too"
     assert any('heuristic' in w for w in a['warnings'])
 
 
@@ -891,6 +896,309 @@ def test_heuristic_is_deterministic():
     state = multiway_flop(['Ah', 'As'])
     assert heuristic.advise(state)['equity'] == heuristic.advise(state)['equity'], \
         "the same spot must always get the same answer"
+
+
+# The river is counted, not sampled: nothing is left to deal, so the villains' hands are
+# the whole sample space and walking all 990 of them costs less than the 800 trials it
+# replaces. These pin the exactness, since a wrong count would still look plausible.
+# ---------------------------------------------------------------------------
+
+def river(hand, board, n_villains=1):
+    """A complete board, as the values equity() works in: (rank value, suit)."""
+    to_vals = lambda cards: [(heuristic.RANK_VAL[r], s)
+                             for r, s in map(heuristic.parse_card, cards)]
+    return to_vals(hand), to_vals(board), n_villains
+
+
+def test_river_equity_is_exact_not_sampled():
+    # The board is a royal flush, so every hand alive plays it and chops: 1/2 heads-up,
+    # 1/3 three-handed. Monte Carlo lands near these; only counting hits them exactly.
+    hero, board, _ = river(['2c', '3d'], ['As', 'Ks', 'Qs', 'Js', 'Ts'])
+    assert heuristic.equity(hero, board, 1) == 0.5, "everyone plays the board, hero chops"
+    assert heuristic.equity(hero, board, 2) == 1 / 3, "three-way chop, exactly a third"
+
+    # The nuts is 1.0 and drawing dead is 0.0 with no sampling slack either side.
+    hero, board, _ = river(['As', 'Ks'], ['2s', '5s', '9s', 'Jd', '4c'])
+    assert heuristic.equity(hero, board, 1) == 1.0, "the nut flush beats every hand"
+    assert heuristic.equity(hero, board, 2) == 1.0
+
+
+def test_river_two_villain_counting_matches_the_pair_walk():
+    # exact_river never enumerates the ~450k disjoint pairs -- it counts them from
+    # per-card occurrences. This is that shortcut checked against the walk it replaces,
+    # on a tie-heavy board where the thirds are easiest to get wrong.
+    hero, board, _ = river(['2c', '3d'], ['As', 'Ad', 'Ah', 'Ks', 'Kd'])
+    deck = [c for c in heuristic.FULL_DECK if c not in set(hero + board)]
+    hero_val = heuristic.eval7(hero + board)
+    hands = [(set(h), heuristic.eval7(list(h) + board))
+             for h in itertools.combinations(deck, 2)]
+
+    share, total = Fraction(0), 0
+    for i, (s1, v1) in enumerate(hands):
+        for s2, v2 in hands[i + 1:]:
+            if s1 & s2:
+                continue
+            total += 1
+            best = max(v1, v2)
+            if hero_val > best:
+                share += 1
+            elif hero_val == best:
+                share += Fraction(1, 1 + (v1 == hero_val) + (v2 == hero_val))
+
+    # Exact rationals, not a tolerance: the counting identity is either right or it is not.
+    assert heuristic.exact_river(hero, board, 2, deck) == float(share / total)
+
+
+def test_turn_equity_is_exact_not_sampled():
+    # A royal flush on the turn: no river card and no two hole cards beat it, so the
+    # answer is exactly 1, both heads-up and three-handed. Sampling only approaches it.
+    hero, board, _ = river(['As', 'Ks'], ['Qs', 'Js', 'Ts', '2h'])
+    assert heuristic.equity(hero, board, 1) == 1.0, "a turned royal cannot be beaten"
+    assert heuristic.equity(hero, board, 2) == 1.0
+
+
+def test_turn_equity_matches_the_full_runout_walk():
+    # The turn is counted by conditioning on each river card. This is that decomposition
+    # against the walk it stands in for: every (villain hand, river) combination.
+    hero, board, _ = river(['As', 'Ks'], ['2c', '7d', '9h', 'Js'])
+    deck = [c for c in heuristic.FULL_DECK if c not in set(hero + board)]
+
+    share, total = Fraction(0), 0
+    for card_ in deck:
+        runout = board + [card_]
+        hero_val = heuristic.eval7(hero + runout)
+        for hand in itertools.combinations([c for c in deck if c != card_], 2):
+            val = heuristic.eval7(list(hand) + runout)
+            total += 1
+            share += 1 if hero_val > val else Fraction(1, 2) if hero_val == val else 0
+
+    # Not bit-equality: the turn sums one float per river card, so it lands within a few
+    # ulps of the rational rather than on it. The river, one integer division, is exact.
+    assert abs(heuristic.exact_turn(hero, board, 1, deck) - float(share / total)) < 1e-12
+
+
+def test_turn_two_villains_does_not_walk_the_pair_space():
+    # Three-handed the turn is 20.5M hand-pair-and-river combinations; counting the pairs
+    # rather than enumerating them is what keeps it near the heads-up cost. Walking it
+    # takes ~5s, so this both times out a regression and pins the answer's shape.
+    hero, board, _ = river(['As', 'Ks'], ['2c', '7d', '9h', 'Js'])
+    deck = [c for c in heuristic.FULL_DECK if c not in set(hero + board)]
+
+    start = time.perf_counter()
+    two = heuristic.exact_turn(hero, board, 2, deck)
+    elapsed = time.perf_counter() - start
+
+    assert elapsed < 2.0, f"the turn took {elapsed:.1f}s -- the pair space is being walked"
+    one = heuristic.exact_turn(hero, board, 1, deck)
+    assert 0.0 < two < one, "beating two random hands is strictly harder than beating one"
+
+
+def test_river_equity_beats_sampling_on_cost():
+    # The point of counting the river is that it is not a trade -- it is exact AND
+    # cheaper, because hero's value is one eval instead of one per trial.
+    hero, board, _ = river(['As', 'Ks'], ['2c', '7d', '9h', 'Js', '4c'])
+    deck = [c for c in heuristic.FULL_DECK if c not in set(hero + board)]
+
+    start = time.perf_counter()
+    heuristic.exact_river(hero, board, 1, deck)
+    exact_s = time.perf_counter() - start
+
+    start = time.perf_counter()
+    heuristic.equity(hero, board[:3], 1)          # a flop, so the same call samples
+    sampled_s = time.perf_counter() - start
+
+    assert exact_s < 4 * sampled_s, \
+        f"counting the river took {exact_s:.3f}s vs {sampled_s:.3f}s to sample a flop"
+
+
+def test_equity_cache_makes_a_repeated_spot_free():
+    # One turn is often asked about more than once -- hero bets, gets raised, decides
+    # again -- and the answer cannot have changed. The exact turn costs ~0.14s, so the
+    # repeat has to come out of the cache rather than be recomputed.
+    hero, board, _ = river(['As', 'Ks'], ['2c', '7d', '9h', 'Js'])
+    heuristic._equity.cache_clear()
+
+    start = time.perf_counter()
+    first = heuristic.equity(hero, board, 2)
+    cold = time.perf_counter() - start
+
+    start = time.perf_counter()
+    again = heuristic.equity(hero, board, 2)
+    warm = time.perf_counter() - start
+
+    assert again == first, "the same spot must give back the identical float"
+    assert warm < cold / 100, f"repeat took {warm * 1000:.1f}ms vs {cold * 1000:.1f}ms cold"
+
+
+def test_equity_cache_keys_on_the_spot_not_the_call():
+    # A board that arrives in a different order is the same spot, and must not pay twice.
+    hero, board, _ = river(['As', 'Ks'], ['2c', '7d', '9h', 'Js'])
+    heuristic._equity.cache_clear()
+    assert heuristic.equity(hero, board, 2) == heuristic.equity(hero, board[::-1], 2)
+    assert heuristic._equity.cache_info().currsize == 1, "reordering made a second entry"
+
+    # But the villain count and the board itself are part of the spot.
+    assert heuristic.equity(hero, board, 1) != heuristic.equity(hero, board, 2)
+    assert heuristic.equity(hero, board[:3], 1) != heuristic.equity(hero, board, 1)
+
+
+def test_equity_rejects_duplicate_cards_before_caching():
+    # The guard sits outside the memo, so a malformed spot raises every time rather than
+    # being answered once and then remembered.
+    hero, board, _ = river(['As', 'Ks'], ['2c', '7d', '9h', 'Js'])
+    for _ in range(2):
+        with pytest.raises(Unsupported, match='duplicate'):
+            heuristic.equity(hero, board + [hero[0]], 1)
+
+
+# Range-weighted equity: the villain holds hands from a real preflop chart rather than any
+# two cards, narrowed further by the bet they just made. The counting identity is the same
+# one the unweighted path uses, with occurrence counts replaced by weight sums, so what
+# the tests have to pin is that it degenerates correctly and moves the answer the right way.
+# ---------------------------------------------------------------------------
+
+ALL_HANDS = ({r + r: 1.0 for r in 'AKQJT98765432'} |
+             {f"{a}{b}{sfx}": 1.0 for a in 'AKQJT98765432' for b in 'AKQJT98765432'
+              for sfx in ('s', 'o')})
+
+
+def combos_for(deck, board, class_weights, shape=None):
+    return heuristic.build_combo_weights(deck, board, class_weights, shape)
+
+
+def test_range_weighting_degenerates_to_uniform():
+    # A range that holds every hand at full weight IS the vs-random-hands model, so the
+    # weighted path has to land on the unweighted answer exactly, not merely close.
+    hero, board, _ = river(['As', 'Ks'], ['2c', '7d', '9h', 'Js', '4c'])
+    deck = [c for c in heuristic.FULL_DECK if c not in set(hero + board)]
+    every = combos_for(deck, board, ALL_HANDS)
+    for n in (1, 2):
+        assert (heuristic.exact_river(hero, board, n, deck, every) ==
+                heuristic.exact_river(hero, board, n, deck))
+
+
+def test_combo_weights_survive_the_turn_reslicing_the_deck():
+    # Combos are keyed on the tuples combinations() yields, and exact_turn re-slices the
+    # deck once per river card. If that changed a tuple's order the lookups would miss and
+    # those hands would silently drop to weight 0, so this pins the ordering rather than
+    # trusting it: an all-ones range must still reproduce the uniform answer exactly.
+    hero, board, _ = river(['As', 'Ks'], ['2c', '7d', '9h', 'Js'])
+    deck = [c for c in heuristic.FULL_DECK if c not in set(hero + board)]
+    every = combos_for(deck, board, ALL_HANDS)
+    for n in (1, 2):
+        assert (heuristic.exact_turn(hero, board, n, deck, every) ==
+                heuristic.exact_turn(hero, board, n, deck))
+
+    for card_ in deck:
+        for hand in itertools.combinations([c for c in deck if c != card_], 2):
+            assert hand in every, f"{hand} went missing once {card_} was dealt"
+
+
+def test_range_weighted_river_matches_the_weighted_walk():
+    hero, board, _ = river(['As', 'Ks'], ['2c', '7d', '9h', 'Js', '4c'])
+    deck = [c for c in heuristic.FULL_DECK if c not in set(hero + board)]
+    weights = heuristic.load_range(heuristic.CONTINUING_RANGE)
+    combos = combos_for(deck, board, weights)
+    hero_val = heuristic.eval7(hero + board)
+
+    num = den = 0.0
+    for hand, w in combos.items():
+        val = heuristic.eval7(list(hand) + board)
+        den += w
+        num += w * (1.0 if hero_val > val else 0.5 if hero_val == val else 0.0)
+
+    assert abs(heuristic.exact_river(hero, board, 1, deck, combos) - num / den) < 1e-12
+
+
+def shift_vs_range(hand, board_cards, shape=None):
+    """(equity vs random, equity vs the continuing range) for one river spot."""
+    weights = heuristic.load_range(heuristic.CONTINUING_RANGE)
+    hero, board, _ = river(hand, board_cards)
+    deck = [c for c in heuristic.FULL_DECK if c not in set(hero + board)]
+    return (heuristic.exact_river(hero, board, 1, deck),
+            heuristic.exact_river(hero, board, 1, deck,
+                                  combos_for(deck, board, weights, shape)))
+
+
+def test_range_weighting_costs_a_hand_with_no_showdown_value():
+    # The one direction that holds on every board: a hand that beats only junk is worth
+    # less once the junk is gone. JTs missed all three of these.
+    for board_cards in (['Ac', 'Kd', '3s', '7h', '2c'],
+                        ['Kc', '8d', '3s', '7h', '2c'],
+                        ['9c', '6d', '3s', '7h', '2c']):
+        random_eq, range_eq = shift_vs_range(['Jh', 'Td'], board_cards)
+        assert range_eq < random_eq, f"JTs should lose value vs a range on {board_cards}"
+
+
+def test_range_weighting_does_not_shift_every_hand_the_same_way():
+    # The reason this has to be a model change and not a bigger CALL_MARGIN: the
+    # correction has no fixed sign. A busted hand loses equity against a range while a
+    # made hand gains it, because the chart's callers both folded their trash AND 3-bet
+    # their premiums -- the range is capped as well as narrowed.
+    busted_random, busted_range = shift_vs_range(['Jh', 'Td'], ['9c', '6d', '3s', '7h', '2c'])
+    made_random, made_range = shift_vs_range(['Ah', 'Kd'], ['9c', '6d', '3s', '7h', '2c'])
+
+    assert busted_range < busted_random, "a hand beating only junk loses when junk leaves"
+    assert made_range > made_random, "ace high gains against a range that 3-bet its aces"
+    assert (made_range - made_random) * (busted_range - busted_random) < 0, \
+        "the two shifts must have opposite signs; one margin cannot correct both"
+
+
+def test_range_weighting_is_on_by_default():
+    hero, board, _ = river(['As', 'Ks'], ['2c', '7d', '9h', 'Js', '4c'])
+    deck = [c for c in heuristic.FULL_DECK if c not in set(hero + board)]
+    assert heuristic.USE_RANGE_WEIGHTS is True
+    assert (heuristic.equity(hero, board, 1, villain_range=heuristic.CONTINUING_RANGE) !=
+            heuristic.exact_river(hero, board, 1, deck)), "weighting must change something"
+
+
+def test_bet_shape_reads_the_size():
+    assert heuristic.bet_shape(2.0, 10.0) == 'small'      # 20% pot
+    assert heuristic.bet_shape(6.0, 10.0) == 'medium'     # 60% pot
+    assert heuristic.bet_shape(15.0, 10.0) == 'large'     # 150% pot
+    assert heuristic.bet_shape(5.0, 0.0) == 'large', "a bet into nothing is not a small one"
+
+
+def test_a_bet_polarises_the_range_it_narrows():
+    # The middle of the range is the part that stops betting, so a bet should leave the
+    # top and the bottom intact and thin out what is in between.
+    hero, board, _ = river(['As', 'Ks'], ['2c', '7d', '9h', 'Js', '4c'])
+    deck = [c for c in heuristic.FULL_DECK if c not in set(hero + board)]
+    weights = heuristic.load_range(heuristic.CONTINUING_RANGE)
+
+    wide = combos_for(deck, board, weights)
+    narrow = combos_for(deck, board, weights, 'large')
+    assert set(narrow) == set(wide), "narrowing re-weights hands, it never removes them"
+
+    ranked = sorted(wide, key=lambda h: heuristic.eval7(list(h) + board), reverse=True)
+    best, middle, worst = ranked[0], ranked[len(ranked) // 2], ranked[-1]
+    assert narrow[best] == wide[best], "the top of the range bets for value"
+    assert narrow[worst] == wide[worst], "the bottom bets as a bluff"
+    assert narrow[middle] < wide[middle], "the middle is what checks"
+    assert narrow[middle] > 0, "and it is thinned, not deleted"
+
+
+def test_a_big_bet_hurts_a_bluff_catcher_more_than_a_small_one():
+    # The payoff of reading bet size at all: a hand that only beats bluffs is worth less
+    # against a big bet than a small one, because a big bet is the more polarised range.
+    board_cards = ['Kc', '8d', '3s', '7h', '2c']
+    _, small = shift_vs_range(['9h', '9d'], board_cards, 'small')
+    _, large = shift_vs_range(['9h', '9d'], board_cards, 'large')
+    assert large < small, "an underpair does worse against the more polarised bet"
+
+
+def test_no_bet_leaves_the_range_unnarrowed():
+    # A villain with no chips in front may have checked or may not have acted yet, and
+    # the state does not say which -- so advise() must not read it as a check.
+    state = multiway_flop(['Ah', 'As'], board=('Kc', '8d', '3s', '7h'))
+    state['street'] = 'turn'
+    r = heuristic.advise(state, reason='measuring')
+    assert any('not narrowed by any action' in w for w in r['warnings'])
+
+
+def test_load_range_rejects_a_chart_that_is_not_there():
+    with pytest.raises(Unsupported, match='no range chart'):
+        heuristic.load_range(os.path.join('BB', 'not_a_real_node.txt'))
 
 
 def test_heuristic_rejects_what_it_cannot_answer():
