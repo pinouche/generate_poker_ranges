@@ -1,0 +1,70 @@
+{"hand": 0, "client_pos": 0, "hole_cards": ["9s", "8h"], "board": ["Ks", "Kh", "5s"], "action": "b200c/b200b600f", "winnings": -400, "bot_hole_cards": ["Ts", "7c"], "seconds": 6.318}
+{"hand": 1, "client_pos": 1, "hole_cards": ["7s", "3h"], "board": [], "action": "f", "winnings": -50, "bot_hole_cards": ["Kc", "Jh"], "seconds": 0.806}
+{"hand": 2, "client_pos": 0, "hole_cards": ["Kd", "3s"], "board": [], "action": "f", "winnings": 50, "bot_hole_cards": ["9h", "2s"], "seconds": 0.316}
+{"hand": 3, "client_pos": 1, "hole_cards": ["9d", "6h"], "board": [], "action": "f", "winnings": -50, "bot_hole_cards": ["8h", "4c"], "seconds": 0.605}
+{"hand": 4, "client_pos": 0, "hole_cards": ["Qd", "7s"], "board": ["9d", "7h", "5h", "Ac", "6c"], "action": "b200c/kb200c/kk/kk", "winnings": 400, "bot_hole_cards": ["Td", "6s"], "seconds": 6.829}
+{"hand": 5, "client_pos": 1, "hole_cards": ["Tc", "9h"], "board": [], "action": "f", "winnings": -50, "bot_hole_cards": ["5s", "2s"], "seconds": 0.645}
+{"hand": 6, "client_pos": 0, "hole_cards": ["Td", "8d"], "board": ["Js", "5c", "2h"], "action": "b200c/kb200f", "winnings": -200, "bot_hole_cards": ["Qd", "4h"], "seconds": 5.678}
+{"hand": 7, "client_pos": 1, "hole_cards": ["Qc", "6s"], "board": [], "action": "f", "winnings": -50, "bot_hole_cards": ["Ad", "9h"], "seconds": 0.639}
+{"hand": 8, "client_pos": 0, "hole_cards": ["Qs", "8c"], "board": ["7c", "5s", "2c", "2d", "3d"], "action": "b200c/b200c/kk/kk", "winnings": -400, "bot_hole_cards": ["Ah", "Jc"], "seconds": 5.358}
+{"hand": 9, "client_pos": 1, "hole_cards": ["8c", "3s"], "board": [], "action": "f", "winnings": -50, "bot_hole_cards": ["7s", "6s"], "seconds": 0.596}
+{"hand": 10, "client_pos": 0, "hole_cards": ["Jc", "3c"], "board": ["Ah", "Tc", "2h", "7s", "9s"], "action": "b200c/kb200c/kk/kb800f", "winnings": -400, "bot_hole_cards": ["Qs", "5s"], "seconds": 6.795}
+{"hand": 11, "client_pos": 1, "hole_cards": ["Ad", "2s"], "board": [], "action": "f", "winnings": -50, "bot_hole_cards": ["6c", "3s"], "seconds": 0.61}
+{"hand": 12, "client_pos": 0, "hole_cards": ["Kd", "Jh"], "board": ["Qh", "Qd", "5c"], "action": "b200c/kb200b700f", "winnings": 400, "bot_hole_cards": ["8h", "4h"], "seconds": 5.515}
+{"hand": 13, "client_pos": 1, "hole_cards": ["Ad", "8s"], "board": [], "action": "f", "winnings": -50, "bot_hole_cards": ["Ah", "8c"], "seconds": 0.632}
+{"hand": 14, "client_pos": 0, "hole_cards": ["Qs", "Qc"], "board": [], "action": "f", "winnings": 50, "bot_hole_cards": ["9d", "2h"], "seconds": 0.308}
+{"hand": 15, "client_pos": 1, "hole_cards": ["Ah", "2d"], "board": [], "action": "f", "winnings": -50, "bot_hole_cards": ["Ad", "9h"], "seconds": 0.61}
+{"hand": 16, "client_pos": 0, "hole_cards": ["Ad", "7d"], "board": [], "action": "f", "winnings": 50, "bot_hole_cards": ["9h", "3d"], "seconds": 0.313}
+{"hand": 17, "client_pos": 1, "hole_cards": ["Ts", "9s"], "board": [], "action": "f", "winnings": -50, "bot_hole_cards": ["Qh", "9d"], "seconds": 0.62}
+{"hand": 18, "client_pos": 0, "hole_cards": ["Qd", "8s"], "board": ["Js", "9d", "6s", "5h"], "action": "b200c/kk/b400f", "winnings": 200, "bot_hole_cards": ["Ah", "Kd"], "seconds": 4.959}
+{"hand": 19, "client_pos": 1, "hole_cards": ["5d", "4s"], "board": [], "action": "f", "winnings": -50, "bot_hole_cards": ["Ah", "6c"], "seconds": 2.891}
+{"hand": 20, "client_pos": 0, "hole_cards": ["As", "Ah"], "board": ["Ac", "6d", "2d", "5c"], "action": "b200b600c/b300b2100c/b3600f", "winnings": 2700, "bot_hole_cards": ["Jd", "9s"], "seconds": 13.375}
+{"hand": 21, "client_pos": 1, "hole_cards": ["9s", "6h"], "board": [], "action": "f", "winnings": -50, "bot_hole_cards": ["9c", "6s"], "seconds": 0.615}
+{"hand": 22, "client_pos": 0, "hole_cards": ["Kc", "6h"], "board": ["8c", "2s", "2h"], "action": "b200c/kb200b700f", "winnings": 400, "bot_hole_cards": ["Jh", "4c"], "seconds": 8.004}
+{"hand": 23, "client_pos": 1, "hole_cards": ["Th", "5s"], "board": [], "action": "f", "winnings": -50, "bot_hole_cards": ["6c", "4c"], "seconds": 0.613}
+{"hand": 24, "client_pos": 0, "hole_cards": ["Ah", "8c"], "board": [], "action": "f", "winnings": 50, "bot_hole_cards": ["8h", "2c"], "seconds": 0.345}
+{"hand": 25, "client_pos": 1, "hole_cards": ["Kd", "5d"], "board": [], "action": "f", "winnings": -50, "bot_hole_cards": ["4d", "2c"], "seconds": 0.616}
+{"hand": 26, "client_pos": 0, "hole_cards": ["Js", "6h"], "board": ["Th", "6c", "4s", "Jc", "Qs"], "action": "b200c/kk/kb200c/b533c", "winnings": 933, "bot_hole_cards": ["Td", "9s"], "seconds": 6.991}
+{"hand": 27, "client_pos": 1, "hole_cards": ["Jh", "7h"], "board": [], "action": "f", "winnings": -50, "bot_hole_cards": ["Ah", "Qs"], "seconds": 0.633}
+{"hand": 28, "client_pos": 0, "hole_cards": ["Ac", "7c"], "board": ["Jd", "7s", "4c", "9s", "Td"], "action": "b200c/kk/b400c/kk", "winnings": -600, "bot_hole_cards": ["Ad", "9h"], "seconds": 5.558}
+{"hand": 29, "client_pos": 1, "hole_cards": ["Jc", "8c"], "board": [], "action": "f", "winnings": -50, "bot_hole_cards": ["Th", "9c"], "seconds": 0.619}
+{"hand": 30, "client_pos": 0, "hole_cards": ["9h", "3s"], "board": ["Ks", "Kc", "9c", "4d"], "action": "b200c/kb200c/b533f", "winnings": 400, "bot_hole_cards": ["Qs", "3c"], "seconds": 7.459}
+{"hand": 31, "client_pos": 1, "hole_cards": ["9s", "7d"], "board": [], "action": "f", "winnings": -50, "bot_hole_cards": ["Tc", "2d"], "seconds": 0.634}
+{"hand": 32, "client_pos": 0, "hole_cards": ["Qs", "Td"], "board": ["Ad", "7s", "5d", "Kc", "8h"], "action": "b200c/kk/kb200c/kb800c", "winnings": 1200, "bot_hole_cards": ["Th", "6c"], "seconds": 5.494}
+{"hand": 33, "client_pos": 1, "hole_cards": ["4d", "3h"], "board": [], "action": "f", "winnings": -50, "bot_hole_cards": ["7h", "6c"], "seconds": 0.627}
+{"hand": 34, "client_pos": 0, "hole_cards": ["As", "3s"], "board": ["Kd", "7s", "5c", "2s", "Ks"], "action": "b200c/kb200c/kb800c/b1600b6000b18000f", "winnings": 7200, "bot_hole_cards": ["Ts", "9s"], "seconds": 9.222}
+{"hand": 35, "client_pos": 1, "hole_cards": ["Kd", "4h"], "board": [], "action": "f", "winnings": -50, "bot_hole_cards": ["Ac", "Jd"], "seconds": 0.61}
+{"hand": 36, "client_pos": 0, "hole_cards": ["6d", "3d"], "board": ["Ts", "Th", "7d", "9d"], "action": "b200c/kk/b400f", "winnings": 200, "bot_hole_cards": ["As", "3h"], "seconds": 7.148}
+{"hand": 37, "client_pos": 1, "hole_cards": ["4d", "2d"], "board": [], "action": "f", "winnings": -50, "bot_hole_cards": ["Jc", "9h"], "seconds": 0.628}
+{"hand": 38, "client_pos": 0, "hole_cards": ["Qs", "6h"], "board": ["9c", "3c", "2c", "Kd"], "action": "b200c/kb200c/kb400f", "winnings": -400, "bot_hole_cards": ["As", "5d"], "seconds": 5.27}
+{"hand": 39, "client_pos": 1, "hole_cards": ["8s", "3s"], "board": [], "action": "f", "winnings": -50, "bot_hole_cards": ["Ks", "4d"], "seconds": 0.614}
+{"hand": 40, "client_pos": 0, "hole_cards": ["8h", "5h"], "board": ["Kh", "3c", "2c", "Qc", "6h"], "action": "b200c/b200c/kk/kk", "winnings": -400, "bot_hole_cards": ["5s", "3h"], "seconds": 7.447}
+{"hand": 41, "client_pos": 1, "hole_cards": ["8c", "2c"], "board": [], "action": "f", "winnings": -50, "bot_hole_cards": ["Qh", "9d"], "seconds": 0.628}
+{"hand": 42, "client_pos": 0, "hole_cards": ["Jc", "7h"], "board": ["As", "5s", "2d", "3s"], "action": "b200c/kk/kb200f", "winnings": -200, "bot_hole_cards": ["6c", "5d"], "seconds": 6.984}
+{"hand": 43, "client_pos": 1, "hole_cards": ["8h", "2c"], "board": [], "action": "f", "winnings": -50, "bot_hole_cards": ["Kd", "7c"], "seconds": 0.607}
+{"hand": 44, "client_pos": 0, "hole_cards": ["8d", "6d"], "board": ["Jd", "9d", "7s", "5d"], "action": "b200c/kk/b400f", "winnings": 200, "bot_hole_cards": ["9s", "6s"], "seconds": 5.322}
+{"hand": 45, "client_pos": 1, "hole_cards": ["As", "6h"], "board": [], "action": "f", "winnings": -50, "bot_hole_cards": ["Ks", "3s"], "seconds": 0.606}
+{"hand": 46, "client_pos": 0, "hole_cards": ["Qd", "2d"], "board": ["Kh", "7h", "4d"], "action": "b200c/b200f", "winnings": 200, "bot_hole_cards": ["9s", "5d"], "seconds": 4.632}
+{"hand": 47, "client_pos": 1, "hole_cards": ["Ad", "7d"], "board": [], "action": "f", "winnings": -50, "bot_hole_cards": ["Qh", "6c"], "seconds": 0.612}
+{"hand": 48, "client_pos": 0, "hole_cards": ["5s", "3s"], "board": ["Qs", "8c", "2c", "6s", "9d"], "action": "b200c/kk/kk/kk", "winnings": -200, "bot_hole_cards": ["Ks", "Th"], "seconds": 6.321}
+{"hand": 49, "client_pos": 1, "hole_cards": ["7d", "3d"], "board": [], "action": "f", "winnings": -50, "bot_hole_cards": ["Qc", "Jh"], "seconds": 0.614}
+{"hand": 50, "client_pos": 0, "hole_cards": ["As", "8c"], "board": [], "action": "f", "winnings": 50, "bot_hole_cards": ["9h", "2d"], "seconds": 0.309}
+{"hand": 51, "client_pos": 1, "hole_cards": ["Td", "5c"], "board": [], "action": "f", "winnings": -50, "bot_hole_cards": ["Qh", "2c"], "seconds": 0.605}
+{"hand": 52, "client_pos": 0, "hole_cards": ["Tc", "3h"], "board": ["8s", "3s", "2d", "2h", "8h"], "action": "b200c/kk/kk/b267c", "winnings": 467, "bot_hole_cards": ["Kd", "Jd"], "seconds": 5.346}
+{"hand": 53, "client_pos": 1, "hole_cards": ["4d", "3c"], "board": [], "action": "f", "winnings": -50, "bot_hole_cards": ["Jc", "8c"], "seconds": 0.605}
+{"hand": 54, "client_pos": 0, "hole_cards": ["7d", "2h"], "board": ["Ad", "Qs", "Qh", "4d", "2c"], "action": "b200c/kk/kk/kb200c", "winnings": -400, "bot_hole_cards": ["Ac", "4h"], "seconds": 5.556}
+{"hand": 55, "client_pos": 1, "hole_cards": ["Ad", "9h"], "board": [], "action": "f", "winnings": -50, "bot_hole_cards": ["6h", "2h"], "seconds": 0.61}
+{"hand": 56, "client_pos": 0, "hole_cards": ["Qs", "5h"], "board": ["Kc", "Jd", "2h"], "action": "b200c/kb200f", "winnings": -200, "bot_hole_cards": ["5s", "3c"], "seconds": 5.844}
+{"hand": 57, "client_pos": 1, "hole_cards": ["Qs", "5h"], "board": [], "action": "f", "winnings": -50, "bot_hole_cards": ["Jd", "8c"], "seconds": 0.609}
+{"hand": 58, "client_pos": 0, "hole_cards": ["8d", "5h"], "board": ["Ad", "Qh", "9d"], "action": "b200c/kb200f", "winnings": -200, "bot_hole_cards": ["As", "7s"], "seconds": 7.033}
+{"hand": 59, "client_pos": 1, "hole_cards": ["4h", "2s"], "board": [], "action": "f", "winnings": -50, "bot_hole_cards": ["Th", "9c"], "seconds": 0.597}
+{"hand": 60, "client_pos": 0, "hole_cards": ["8h", "7c"], "board": ["Ah", "7s", "4h"], "action": "b200c/b200f", "winnings": 200, "bot_hole_cards": ["Qc", "3c"], "seconds": 4.467}
+{"hand": 61, "client_pos": 1, "hole_cards": ["7d", "3h"], "board": [], "action": "f", "winnings": -50, "bot_hole_cards": ["Qh", "9s"], "seconds": 0.604}
+{"hand": 62, "client_pos": 0, "hole_cards": ["Kd", "7d"], "board": ["3s", "3c", "2d", "6h", "Qc"], "action": "b200c/kb200c/kb800c/kk", "winnings": -1200, "bot_hole_cards": ["Td", "6d"], "seconds": 5.934}
+{"hand": 63, "client_pos": 1, "hole_cards": ["4h", "3s"], "board": [], "action": "f", "winnings": -50, "bot_hole_cards": ["Td", "8c"], "seconds": 0.748}
+{"hand": 64, "client_pos": 0, "hole_cards": ["5d", "2s"], "board": ["7s", "7c", "4s"], "action": "b200c/kb200f", "winnings": -200, "bot_hole_cards": ["Th", "5h"], "seconds": 7.493}
+{"hand": 65, "client_pos": 1, "hole_cards": ["Ks", "5d"], "board": [], "action": "f", "winnings": -50, "bot_hole_cards": ["4c", "2d"], "seconds": 0.612}
+{"hand": 66, "client_pos": 0, "hole_cards": ["Tc", "7d"], "board": [], "action": "f", "winnings": 50, "bot_hole_cards": ["9d", "3h"], "seconds": 0.304}
+{"hand": 67, "client_pos": 1, "hole_cards": ["Kc", "Qh"], "board": [], "action": "f", "winnings": -50, "bot_hole_cards": ["Ts", "5c"], "seconds": 0.624}
+{"hand": 68, "client_pos": 0, "hole_cards": ["5d", "2c"], "board": ["Jd", "9s", "3c"], "action": "b200c/kb200f", "winnings": -200, "bot_hole_cards": ["9h", "6s"], "seconds": 6.413}
+{"hand": 69, "client_pos": 1, "hole_cards": ["Td", "9h"], "board": [], "action": "f", "winnings": -50, "bot_hole_cards": ["8d", "4c"], "seconds": 0.591}

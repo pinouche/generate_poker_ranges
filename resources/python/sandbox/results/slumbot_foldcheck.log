@@ -1,0 +1,15 @@
+fold_policy vs slumbot, 100 hands, alternating seats
+     50 hands      -660 mbb/g  [-766, -554]      32s
+    100 hands      -690 mbb/g  [-758, -622]      67s
+
+100 hands vs Slumbot, 200bb deep (50/100), seat alternating -- fold_policy
+
+  seat            hands     chips     mbb/g                95% CI
+  both seats        100    -6,900      -690          [-758, -622]
+  button             50    -2,500      -500          [-500, -500]
+  big blind          50    -4,400      -880          [-994, -766]
+
+  state-replay check: ok on every folded hand
+  hands reached: preflop 100
+
+written to /Users/thomas/Projects/personal_projects/generate_poker_ranges/resources/python/sandbox/results  (66s)

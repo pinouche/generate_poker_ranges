@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "hands_requested": 100,
+    "hands_played": 100,
+    "policy": "fold_policy",
+    "mode": "sample",
+    "seed": 0,
+    "stack": 20000,
+    "blinds": [
+      50,
+      100
+    ],
+    "endpoint": "api.advise_endpoint (in process)",
+    "seconds": 66.5
+  },
+  "overall": {
+    "hands": 100,
+    "total_chips": -6900,
+    "mbb_per_game": -690.0,
+    "stderr_mbb": 34.7,
+    "ci95_mbb": [
+      -757.9,
+      -622.1
+    ],
+    "seconds": 66.5,
+    "hands_per_second": 1.5
+  },
+  "by_seat": {
+    "big_blind": {
+      "hands": 50,
+      "total_chips": -4400,
+      "mbb_per_game": -880.0,
+      "stderr_mbb": 58.1,
+      "ci95_mbb": [
+        -993.9,
+        -766.1
+      ],
+      "seconds": 0.0,
+      "hands_per_second": 50000000000.0
+    },
+    "button": {
+      "hands": 50,
+      "total_chips": -2500,
+      "mbb_per_game": -500.0,
+      "stderr_mbb": 0.0,
+      "ci95_mbb": [
+        -500.0,
+        -500.0
+      ],
+      "seconds": 0.0,
+      "hands_per_second": 50000000000.0
+    }
+  },
+  "hands_reaching": {
+    "preflop": 100
+  },
+  "showdowns": 100,
+  "decisions": {
+    "total": 0,
+    "by_source": {},
+    "by_source_share": {},
+    "by_street": {},
+    "by_kind": {},
+    "substituted_kind": 0,
+    "sizing_snap_bb": {
+      "n": 0,
+      "mean": 0.0,
+      "max": 0.0
+    },
+    "mean_seconds": 0.0
+  },
+  "warnings": {},
+  "accounting_mismatches": []
+}

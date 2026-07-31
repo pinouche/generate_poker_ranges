@@ -1,0 +1,504 @@
+18:16:46 INFO: 7♣ 4♥  folds to hero
+          FOLD    100.0%  <- recommended
+          ALL-IN    0.0%
+18:16:47 INFO: POST /advise -> 422  no chart for this spot: the SB raised to 2.0bb without being all-in; the tables only answer a jam
+18:16:52 INFO: A♦ 4♣  heads-up: BTN opens 2.5bb, BB calls | flop 5c 3d 2d: hero first to act
+          CHECK           77.7%  <- recommended
+          BET 200 (2bb)   22.3%
+18:16:53 INFO: A♦ 4♣  heads-up: BTN opens 2.5bb, BB calls | flop 5c 3d 2d: BB CHECK -> BTN BET 200 (2bb)
+          CALL 200             92.7%  <- recommended
+          RAISE to 700 (7bb)    7.3%
+          FOLD                  0.0%
+18:16:53 INFO: A♦ 4♣  heads-up: BTN opens 2.5bb, BB calls | flop 5c 3d 2d: BB CHECK -> BTN BET 200 (2bb) -> BB CALL | turn Jc: hero first to act
+          CHECK  100.0%  <- recommended
+18:16:53 INFO: A♦ 4♣  heads-up: BTN opens 2.5bb, BB calls | flop 5c 3d 2d: BB CHECK -> BTN BET 200 (2bb) -> BB CALL | turn Jc: BB CHECK -> BTN BET 700 (7bb)
+          CALL 800               62.1%  <- recommended
+          RAISE to 2100 (21bb)   37.9%
+          FOLD                    0.0%
+18:16:54 INFO: A♦ 4♣  river 5c3d2dJcKd: no bet to call, pot 2400 -- hero equity ~92% vs 1 hand from a preflop-continuing range
+          BET 1600 (16bb)  100.0%  <- recommended
+          CHECK              0.0%
+18:16:54 INFO: K♦ 4♠  folds to hero
+          FOLD    100.0%  <- recommended
+          ALL-IN    0.0%
+18:16:55 INFO: POST /advise -> 422  no chart for this spot: the SB raised to 2.0bb without being all-in; the tables only answer a jam
+18:17:00 INFO: T♦ 8♠  heads-up: BTN opens 2.5bb, BB calls | flop 9c 5h 2d: hero first to act
+          CHECK           90.5%  <- recommended
+          BET 200 (2bb)    9.5%
+18:17:00 INFO: T♦ 8♠  heads-up: BTN opens 2.5bb, BB calls | flop 9c 5h 2d: BB CHECK -> BTN BET 200 (2bb)
+          CALL 200             57.5%  <- recommended
+          RAISE to 700 (7bb)   42.5%
+          FOLD                  0.0%
+18:17:01 INFO: A♦ 6♣  folds to hero
+          FOLD    100.0%  <- recommended
+          ALL-IN    0.0%
+18:17:02 INFO: POST /advise -> 422  no chart for this spot: the SB raised to 2.0bb without being all-in; the tables only answer a jam
+18:17:08 INFO: K♠ 8♠  heads-up: BTN opens 2.5bb, BB calls | flop 9h 4h 2c: hero first to act
+          CHECK          100.0%  <- recommended
+          BET 200 (2bb)    0.0%
+18:17:08 INFO: K♠ 8♠  heads-up: BTN opens 2.5bb, BB calls | flop 9h 4h 2c: BB CHECK -> BTN BET 200 (2bb)
+          FOLD                100.0%  <- recommended
+          CALL 200              0.0%
+          RAISE to 700 (7bb)    0.0%
+18:17:09 INFO: A♠ 2♠  folds to hero
+          FOLD    100.0%  <- recommended
+          ALL-IN    0.0%
+18:17:09 INFO: POST /advise -> 422  no chart for this spot: the SB raised to 2.0bb without being all-in; the tables only answer a jam
+18:17:14 INFO: J♠ 3♠  heads-up: BTN opens 2.5bb, BB calls | flop Jd 7s 7h: hero first to act
+          CHECK          100.0%  <- recommended
+          BET 200 (2bb)    0.0%
+18:17:14 INFO: J♠ 3♠  heads-up: BTN opens 2.5bb, BB calls | flop Jd 7s 7h: BB CHECK -> BTN BET 200 (2bb)
+          CALL 200             98.8%  <- recommended
+          RAISE to 700 (7bb)    1.2%
+          FOLD                  0.0%
+18:17:15 INFO: J♠ 3♠  heads-up: BTN opens 2.5bb, BB calls | flop Jd 7s 7h: BB CHECK -> BTN BET 200 (2bb) -> BB CALL | turn 2h: hero first to act
+          CHECK  100.0%  <- recommended
+18:17:15 INFO: J♠ 3♠  heads-up: BTN opens 2.5bb, BB calls | flop Jd 7s 7h: BB CHECK -> BTN BET 200 (2bb) -> BB CALL | turn 2h: BB CHECK -> BTN BET 700 (7bb)
+          CALL 800              100.0%  <- recommended
+          FOLD                    0.0%
+          RAISE to 2100 (21bb)    0.0%
+18:17:15 INFO: J♠ 3♠  river Jd7s7h2h2d: no bet to call, pot 2400 -- hero equity ~79% vs 1 hand from a preflop-continuing range
+          BET 1600 (16bb)  100.0%  <- recommended
+          CHECK              0.0%
+18:17:16 INFO: A♥ 7♠  folds to hero
+          FOLD    100.0%  <- recommended
+          ALL-IN    0.0%
+18:17:16 INFO: POST /advise -> 422  no chart for this spot: the SB raised to 2.0bb without being all-in; the tables only answer a jam
+18:17:21 INFO: A♠ 8♥  heads-up: BTN opens 2.5bb, BB calls | flop 8d 3s 2c: hero first to act
+          CHECK           97.0%  <- recommended
+          BET 200 (2bb)    3.0%
+18:17:21 INFO: A♠ 8♥  heads-up: BTN opens 2.5bb, BB calls | flop 8d 3s 2c: BB CHECK -> BTN CHECK | turn 9c: hero first to act
+          CHECK           51.8%  <- recommended
+          BET 400 (4bb)   48.2%
+18:17:22 INFO: A♠ 8♥  heads-up: BTN opens 2.5bb, BB calls | flop 8d 3s 2c: BB CHECK -> BTN CHECK | turn 9c: BB CHECK -> BTN BET 400 (4bb)
+          CALL 200              100.0%  <- recommended
+          FOLD                    0.0%
+          RAISE to 1200 (12bb)    0.0%
+18:17:22 INFO: A♠ 8♥  river 8d3s2c9c6c: no bet to call, pot 800 -- hero equity ~68% vs 1 hand from a preflop-continuing range
+          CHECK            100.0%  <- recommended
+          BET 533 (5.3bb)    0.0%
+18:17:22 INFO: A♠ 8♥  river 8d3s2c9c6c: facing 800 to call into 1600 -- hero equity ~54% vs 1 hand from a large-bet range
+          CALL 800              100.0%  <- recommended
+          FOLD                    0.0%
+          RAISE to 2400 (24bb)    0.0%
+18:17:23 INFO: A♥ 6♦  folds to hero
+          FOLD    100.0%  <- recommended
+          ALL-IN    0.0%
+18:17:24 INFO: POST /advise -> 422  no chart for this spot: the SB raised to 2.0bb without being all-in; the tables only answer a jam
+18:17:28 INFO: A♣ 4♣  flop 9d6d4s: no bet to call, pot 400 -- hero equity ~59% vs 1 random hand
+          CHECK            100.0%  <- recommended
+          BET 267 (2.7bb)    0.0%
+18:17:28 INFO: A♣ 4♣  flop 9d6d4s: facing 200 to call into 600 -- hero equity ~59% vs 1 random hand
+          CALL 200            100.0%  <- recommended
+          FOLD                  0.0%
+          RAISE to 600 (6bb)    0.0%
+18:17:29 INFO: A♣ 4♣  turn 9d6d4sTh: no bet to call, pot 800 -- hero equity ~49% vs 1 hand from a preflop-continuing range
+          CHECK            100.0%  <- recommended
+          BET 533 (5.3bb)    0.0%
+18:17:29 INFO: A♣ 4♣  river 9d6d4sTh9s: no bet to call, pot 800 -- hero equity ~58% vs 1 hand from a preflop-continuing range
+          CHECK            100.0%  <- recommended
+          BET 533 (5.3bb)    0.0%
+18:17:29 INFO: A♣ 4♣  river 9d6d4sTh9s: facing 400 to call into 1200 -- hero equity ~38% vs 1 hand from a medium-bet range
+          CALL 400              100.0%  <- recommended
+          FOLD                    0.0%
+          RAISE to 1200 (12bb)    0.0%
+18:17:30 INFO: K♥ 9♣  folds to hero
+          FOLD    100.0%  <- recommended
+          ALL-IN    0.0%
+18:17:31 INFO: POST /advise -> 422  no chart for this spot: the SB raised to 2.0bb without being all-in; the tables only answer a jam
+18:17:35 INFO: 7♥ 5♥  heads-up: BTN opens 2.5bb, BB calls | flop Qd 9c 2s: hero first to act
+          CHECK          100.0%  <- recommended
+          BET 200 (2bb)    0.0%
+18:17:35 INFO: 7♥ 5♥  heads-up: BTN opens 2.5bb, BB calls | flop Qd 9c 2s: BB CHECK -> BTN CHECK | turn 8h: hero first to act
+          BET 400 (4bb)   57.2%  <- recommended
+          CHECK           42.8%
+18:17:35 INFO: 7♥ 5♥  river Qd9c2s8hTh: no bet to call, pot 400 -- hero equity ~7% vs 1 hand from a preflop-continuing range
+          CHECK            100.0%  <- recommended
+          BET 267 (2.7bb)    0.0%
+18:17:36 INFO: 7♥ 5♥  river Qd9c2s8hTh: facing 200 to call into 600 -- hero equity ~12% vs 1 hand from a medium-bet range
+          FOLD                100.0%  <- recommended
+          CALL 200              0.0%
+          RAISE to 600 (6bb)    0.0%
+18:17:36 INFO: 9♠ 8♦  folds to hero
+          FOLD    100.0%  <- recommended
+          ALL-IN    0.0%
+18:17:37 INFO: POST /advise -> 422  no chart for this spot: the SB raised to 2.0bb without being all-in; the tables only answer a jam
+18:17:42 INFO: K♣ 9♣  flop As7s6s: no bet to call, pot 400 -- hero equity ~38% vs 1 random hand
+          CHECK            100.0%  <- recommended
+          BET 267 (2.7bb)    0.0%
+18:17:42 INFO: K♣ 9♣  flop As7s6s: facing 200 to call into 600 -- hero equity ~38% vs 1 random hand
+          CALL 200            100.0%  <- recommended
+          FOLD                  0.0%
+          RAISE to 600 (6bb)    0.0%
+18:17:42 INFO: K♣ 9♣  turn As7s6s5c: no bet to call, pot 800 -- hero equity ~34% vs 1 hand from a preflop-continuing range
+          CHECK            100.0%  <- recommended
+          BET 533 (5.3bb)    0.0%
+18:17:43 INFO: K♣ 9♣  turn As7s6s5c: facing 800 to call into 1600 -- hero equity ~38% vs 1 hand from a large-bet range
+          FOLD                  100.0%  <- recommended
+          CALL 800                0.0%
+          RAISE to 2400 (24bb)    0.0%
+18:17:44 INFO: 5♣ 2♥  folds to hero
+          FOLD    100.0%  <- recommended
+          ALL-IN    0.0%
+18:17:44 INFO: POST /advise -> 422  no chart for this spot: the SB raised to 2.0bb without being all-in; the tables only answer a jam
+18:17:52 INFO: K♣ 9♠  heads-up: BTN opens 2.5bb, BB calls | flop Qh 8c 5h: hero first to act
+          CHECK           99.9%  <- recommended
+          BET 200 (2bb)    0.1%
+18:17:52 INFO: K♣ 9♠  heads-up: BTN opens 2.5bb, BB calls | flop Qh 8c 5h: BB CHECK -> BTN BET 200 (2bb)
+          FOLD                 99.2%  <- recommended
+          CALL 200              0.8%
+          RAISE to 700 (7bb)    0.0%
+18:17:53 INFO: A♠ 2♣  folds to hero
+          FOLD    100.0%  <- recommended
+          ALL-IN    0.0%
+18:17:53 INFO: POST /advise -> 422  no chart for this spot: the SB raised to 2.0bb without being all-in; the tables only answer a jam
+18:17:59 INFO: 6♦ 5♠  heads-up: BTN opens 2.5bb, BB calls | flop Kh 5d 4h: hero first to act
+          CHECK           71.0%  <- recommended
+          BET 200 (2bb)   29.0%
+18:17:59 INFO: 6♦ 5♠  heads-up: BTN opens 2.5bb, BB calls | flop Kh 5d 4h: BB CHECK -> BTN BET 200 (2bb)
+          RAISE to 700 (7bb)   60.9%  <- recommended
+          CALL 200             39.1%
+          FOLD                  0.0%
+18:17:59 INFO: 6♦ 5♠  heads-up: BTN opens 2.5bb, BB calls | flop Kh 5d 4h: BB CHECK -> BTN BET 200 (2bb) -> BB CALL | turn 9s: hero first to act
+          CHECK  100.0%  <- recommended
+18:18:00 INFO: 6♦ 5♠  river Kh5d4h9sQs: no bet to call, pot 800 -- hero equity ~47% vs 1 hand from a preflop-continuing range
+          CHECK            100.0%  <- recommended
+          BET 533 (5.3bb)    0.0%
+18:18:00 INFO: 9♥ 5♣  folds to hero
+          FOLD    100.0%  <- recommended
+          ALL-IN    0.0%
+18:18:01 INFO: POST /advise -> 422  no chart for this spot: the SB raised to 2.0bb without being all-in; the tables only answer a jam
+18:18:05 INFO: 4♠ 2♦  flop ThTc6h: no bet to call, pot 400 -- hero equity ~18% vs 1 random hand
+          CHECK            100.0%  <- recommended
+          BET 267 (2.7bb)    0.0%
+18:18:05 INFO: 4♠ 2♦  turn ThTc6h7c: no bet to call, pot 400 -- hero equity ~9% vs 1 hand from a preflop-continuing range
+          CHECK            100.0%  <- recommended
+          BET 267 (2.7bb)    0.0%
+18:18:06 INFO: 4♠ 2♦  river ThTc6h7c2s: no bet to call, pot 400 -- hero equity ~58% vs 1 hand from a preflop-continuing range
+          CHECK            100.0%  <- recommended
+          BET 267 (2.7bb)    0.0%
+18:18:06 INFO: A♥ A♣  folds to hero
+          ALL-IN  100.0%  <- recommended
+          FOLD      0.0%
+18:18:07 INFO: POST /advise -> 422  no chart for this spot: the SB raised to 2.0bb without being all-in; the tables only answer a jam
+18:18:11 INFO: A♥ 6♠  heads-up: BTN opens 2.5bb, BB calls | flop 9h 5c 4d: hero first to act
+          CHECK          100.0%  <- recommended
+          BET 200 (2bb)    0.0%
+18:18:12 INFO: A♥ 6♠  heads-up: BTN opens 2.5bb, BB calls | flop 9h 5c 4d: BB CHECK -> BTN BET 200 (2bb)
+          CALL 200             74.6%  <- recommended
+          RAISE to 700 (7bb)   25.2%
+          FOLD                  0.2%
+18:18:12 INFO: A♥ 6♠  heads-up: BTN opens 2.5bb, BB calls | flop 9h 5c 4d: BB CHECK -> BTN BET 200 (2bb) -> BB CALL | turn 5h: hero first to act
+          CHECK  100.0%  <- recommended
+18:18:12 INFO: A♥ 6♠  heads-up: BTN opens 2.5bb, BB calls | flop 9h 5c 4d: BB CHECK -> BTN BET 200 (2bb) -> BB CALL | turn 5h: BB CHECK -> BTN BET 700 (7bb)
+          CALL 400               70.2%  <- recommended
+          RAISE to 2100 (21bb)   29.8%
+          FOLD                    0.0%
+18:18:13 INFO: A♥ 6♠  river 9h5c4d5hKc: no bet to call, pot 1600 -- hero equity ~37% vs 1 hand from a preflop-continuing range
+          CHECK              100.0%  <- recommended
+          BET 1067 (10.7bb)    0.0%
+18:18:13 INFO: A♥ 6♠  river 9h5c4d5hKc: facing 800 to call into 2400 -- hero equity ~32% vs 1 hand from a medium-bet range
+          CALL 800              100.0%  <- recommended
+          FOLD                    0.0%
+          RAISE to 2400 (24bb)    0.0%
+18:18:14 INFO: K♣ 4♣  folds to hero
+          FOLD    100.0%  <- recommended
+          ALL-IN    0.0%
+18:18:15 INFO: 9♣ 2♦  folds to hero
+          FOLD    100.0%  <- recommended
+          ALL-IN    0.0%
+18:18:15 INFO: POST /advise -> 422  no chart for this spot: the SB raised to 2.0bb without being all-in; the tables only answer a jam
+18:18:19 INFO: Q♥ T♦  heads-up: BTN opens 2.5bb, BB calls | flop Jh 5h 2h: hero first to act
+          CHECK           71.9%  <- recommended
+          BET 200 (2bb)   28.1%
+18:18:20 INFO: Q♥ T♦  heads-up: BTN opens 2.5bb, BB calls | flop Jh 5h 2h: BB CHECK -> BTN CHECK | turn 6s: hero first to act
+          BET 400 (4bb)   99.9%  <- recommended
+          CHECK            0.1%
+18:18:20 INFO: Q♦ 2♦  folds to hero
+          FOLD    100.0%  <- recommended
+          ALL-IN    0.0%
+18:18:21 INFO: POST /advise -> 422  no chart for this spot: the SB raised to 2.0bb without being all-in; the tables only answer a jam
+18:18:21 INFO: A♠ J♠  flop Jc5c4c: no bet to call, pot 400 -- hero equity ~67% vs 1 random hand
+          CHECK            100.0%  <- recommended
+          BET 267 (2.7bb)    0.0%
+18:18:22 INFO: A♠ J♠  turn Jc5c4cTh: no bet to call, pot 400 -- hero equity ~74% vs 1 hand from a preflop-continuing range
+          BET 267 (2.7bb)  100.0%  <- recommended
+          CHECK              0.0%
+18:18:22 INFO: 7♠ 5♠  folds to hero
+          FOLD    100.0%  <- recommended
+          ALL-IN    0.0%
+18:18:23 INFO: POST /advise -> 422  no chart for this spot: the SB raised to 2.0bb without being all-in; the tables only answer a jam
+18:18:28 INFO: 7♠ 4♠  heads-up: BTN opens 2.5bb, BB calls | flop Kc 4h 3d: hero first to act
+          CHECK          100.0%  <- recommended
+          BET 200 (2bb)    0.0%
+18:18:28 INFO: 7♠ 4♠  heads-up: BTN opens 2.5bb, BB calls | flop Kc 4h 3d: BB CHECK -> BTN CHECK | turn Tc: hero first to act
+          CHECK          100.0%  <- recommended
+          BET 400 (4bb)    0.0%
+18:18:29 INFO: 7♠ 4♠  river Kc4h3dTc5d: no bet to call, pot 400 -- hero equity ~52% vs 1 hand from a preflop-continuing range
+          CHECK            100.0%  <- recommended
+          BET 267 (2.7bb)    0.0%
+18:18:29 INFO: 7♠ 4♠  river Kc4h3dTc5d: facing 200 to call into 600 -- hero equity ~36% vs 1 hand from a medium-bet range
+          CALL 200            100.0%  <- recommended
+          FOLD                  0.0%
+          RAISE to 600 (6bb)    0.0%
+18:18:29 INFO: 6♥ 2♠  folds to hero
+          FOLD    100.0%  <- recommended
+          ALL-IN    0.0%
+18:18:30 INFO: POST /advise -> 422  no chart for this spot: the SB raised to 2.0bb without being all-in; the tables only answer a jam
+18:18:35 INFO: 8♠ 7♦  heads-up: BTN opens 2.5bb, BB calls | flop 8h 5s 5c: hero first to act
+          CHECK           54.9%  <- recommended
+          BET 200 (2bb)   45.1%
+18:18:35 INFO: 6♥ 3♦  folds to hero
+          FOLD    100.0%  <- recommended
+          ALL-IN    0.0%
+18:18:36 INFO: POST /advise -> 422  no chart for this spot: the SB raised to 2.0bb without being all-in; the tables only answer a jam
+18:18:42 INFO: K♦ 4♦  heads-up: BTN opens 2.5bb, BB calls | flop Ah Kc 9s: hero first to act
+          CHECK          100.0%  <- recommended
+          BET 200 (2bb)    0.0%
+18:18:42 INFO: K♦ 4♦  heads-up: BTN opens 2.5bb, BB calls | flop Ah Kc 9s: BB CHECK -> BTN CHECK | turn Qh: hero first to act
+          CHECK          100.0%  <- recommended
+          BET 400 (4bb)    0.0%
+18:18:42 INFO: K♦ 4♦  river AhKc9sQh6d: no bet to call, pot 400 -- hero equity ~61% vs 1 hand from a preflop-continuing range
+          CHECK            100.0%  <- recommended
+          BET 267 (2.7bb)    0.0%
+18:18:43 INFO: T♦ 7♦  folds to hero
+          FOLD    100.0%  <- recommended
+          ALL-IN    0.0%
+18:18:44 INFO: POST /advise -> 422  no chart for this spot: the SB raised to 2.0bb without being all-in; the tables only answer a jam
+18:18:48 INFO: Q♠ 8♦  heads-up: BTN opens 2.5bb, BB calls | flop Qd 7d 5s: hero first to act
+          CHECK           87.2%  <- recommended
+          BET 200 (2bb)   12.8%
+18:18:49 INFO: Q♠ 8♦  heads-up: BTN opens 2.5bb, BB calls | flop Qd 7d 5s: BB CHECK -> BTN BET 200 (2bb)
+          CALL 200            100.0%  <- recommended
+          RAISE to 700 (7bb)    0.0%
+          FOLD                  0.0%
+18:18:49 INFO: Q♠ 8♦  heads-up: BTN opens 2.5bb, BB calls | flop Qd 7d 5s: BB CHECK -> BTN BET 200 (2bb) -> BB CALL | turn Ac: hero first to act
+          CHECK  100.0%  <- recommended
+18:18:49 INFO: Q♠ 8♦  heads-up: BTN opens 2.5bb, BB calls | flop Qd 7d 5s: BB CHECK -> BTN BET 200 (2bb) -> BB CALL | turn Ac: BB CHECK -> BTN BET 700 (7bb)
+          CALL 800              100.0%  <- recommended
+          FOLD                    0.0%
+          RAISE to 2100 (21bb)    0.0%
+18:18:50 INFO: Q♠ 8♦  river Qd7d5sAc3c: no bet to call, pot 2400 -- hero equity ~63% vs 1 hand from a preflop-continuing range
+          CHECK            100.0%  <- recommended
+          BET 1600 (16bb)    0.0%
+18:18:50 INFO: Q♠ 8♦  river Qd7d5sAc3c: facing 1200 to call into 3600 -- hero equity ~39% vs 1 hand from a medium-bet range
+          CALL 1200             100.0%  <- recommended
+          FOLD                    0.0%
+          RAISE to 3600 (36bb)    0.0%
+18:18:51 INFO: Q♣ 6♣  folds to hero
+          FOLD    100.0%  <- recommended
+          ALL-IN    0.0%
+18:18:51 INFO: POST /advise -> 422  no chart for this spot: the SB raised to 2.0bb without being all-in; the tables only answer a jam
+18:18:57 INFO: 9♦ 6♦  heads-up: BTN opens 2.5bb, BB calls | flop Ts 9s 4h: hero first to act
+          CHECK           98.5%  <- recommended
+          BET 200 (2bb)    1.5%
+18:18:57 INFO: 9♦ 6♦  heads-up: BTN opens 2.5bb, BB calls | flop Ts 9s 4h: BB CHECK -> BTN BET 200 (2bb)
+          CALL 200             99.8%  <- recommended
+          RAISE to 700 (7bb)    0.2%
+          FOLD                  0.0%
+18:18:57 INFO: 9♦ 6♦  heads-up: BTN opens 2.5bb, BB calls | flop Ts 9s 4h: BB CHECK -> BTN BET 200 (2bb) -> BB CALL | turn 2c: hero first to act
+          CHECK  100.0%  <- recommended
+18:18:58 INFO: 9♦ 6♦  river Ts9s4h2cQc: no bet to call, pot 800 -- hero equity ~58% vs 1 hand from a preflop-continuing range
+          CHECK            100.0%  <- recommended
+          BET 533 (5.3bb)    0.0%
+18:18:58 INFO: 9♦ 6♦  river Ts9s4h2cQc: facing 400 to call into 1200 -- hero equity ~38% vs 1 hand from a medium-bet range
+          CALL 400              100.0%  <- recommended
+          FOLD                    0.0%
+          RAISE to 1200 (12bb)    0.0%
+18:18:59 INFO: K♠ 6♦  folds to hero
+          FOLD    100.0%  <- recommended
+          ALL-IN    0.0%
+18:18:59 INFO: POST /advise -> 422  no chart for this spot: the SB raised to 2.0bb without being all-in; the tables only answer a jam
+18:19:03 INFO: 8♠ 7♥  heads-up: BTN opens 2.5bb, BB calls | flop 5h 5c 2d: hero first to act
+          CHECK          100.0%  <- recommended
+          BET 200 (2bb)    0.0%
+18:19:04 INFO: 8♠ 7♥  heads-up: BTN opens 2.5bb, BB calls | flop 5h 5c 2d: BB CHECK -> BTN CHECK | turn Qh: hero first to act
+          CHECK           88.4%  <- recommended
+          BET 400 (4bb)   11.6%
+18:19:04 INFO: 8♠ 7♥  heads-up: BTN opens 2.5bb, BB calls | flop 5h 5c 2d: BB CHECK -> BTN CHECK | turn Qh: BB CHECK -> BTN BET 400 (4bb)
+          FOLD                  100.0%  <- recommended
+          RAISE to 1200 (12bb)    0.0%
+          CALL 200                0.0%
+18:19:05 INFO: J♠ J♣  folds to hero
+          FOLD    100.0%  <- recommended
+          ALL-IN    0.0%
+18:19:05 INFO: POST /advise -> 422  no chart for this spot: the SB raised to 2.0bb without being all-in; the tables only answer a jam
+18:19:11 INFO: 9♣ 6♣  heads-up: BTN opens 2.5bb, BB calls | flop 9h 7s 5s: hero first to act
+          CHECK           72.0%  <- recommended
+          BET 200 (2bb)   28.0%
+18:19:11 INFO: 9♣ 6♣  heads-up: BTN opens 2.5bb, BB calls | flop 9h 7s 5s: BB CHECK -> BTN BET 200 (2bb)
+          CALL 200             92.8%  <- recommended
+          RAISE to 700 (7bb)    7.1%
+          FOLD                  0.0%
+18:19:12 INFO: 9♣ 6♣  heads-up: BTN opens 2.5bb, BB calls | flop 9h 7s 5s: BB CHECK -> BTN BET 200 (2bb) -> BB CALL | turn Jd: hero first to act
+          CHECK  100.0%  <- recommended
+18:19:12 INFO: 9♣ 6♣  river 9h7s5sJdTs: no bet to call, pot 800 -- hero equity ~39% vs 1 hand from a preflop-continuing range
+          CHECK            100.0%  <- recommended
+          BET 533 (5.3bb)    0.0%
+18:19:12 INFO: 9♣ 6♣  river 9h7s5sJdTs: facing 800 to call into 1600 -- hero equity ~45% vs 1 hand from a large-bet range
+          CALL 800              100.0%  <- recommended
+          FOLD                    0.0%
+          RAISE to 2400 (24bb)    0.0%
+18:19:13 INFO: K♥ 2♣  folds to hero
+          FOLD    100.0%  <- recommended
+          ALL-IN    0.0%
+18:19:13 INFO: POST /advise -> 422  no chart for this spot: the SB raised to 2.0bb without being all-in; the tables only answer a jam
+18:19:19 INFO: K♦ Q♣  heads-up: BTN opens 2.5bb, BB calls | flop 6c 4h 3d: hero first to act
+          CHECK           98.0%  <- recommended
+          BET 200 (2bb)    2.0%
+18:19:19 INFO: K♦ Q♣  heads-up: BTN opens 2.5bb, BB calls | flop 6c 4h 3d: BB BET 200 (2bb) -> BTN CALL | turn 6s: hero first to act
+          CHECK          100.0%  <- recommended
+          BET 700 (7bb)    0.0%
+18:19:19 INFO: K♦ Q♣  river 6c4h3d6s2h: no bet to call, pot 800 -- hero equity ~40% vs 1 hand from a preflop-continuing range
+          CHECK            100.0%  <- recommended
+          BET 533 (5.3bb)    0.0%
+18:19:20 INFO: K♦ 8♣  folds to hero
+          FOLD    100.0%  <- recommended
+          ALL-IN    0.0%
+18:19:21 INFO: POST /advise -> 422  no chart for this spot: the SB raised to 2.0bb without being all-in; the tables only answer a jam
+18:19:24 INFO: 9♣ 6♥  heads-up: BTN opens 2.5bb, BB calls | flop As Ks 4s: hero first to act
+          CHECK          100.0%  <- recommended
+          BET 200 (2bb)    0.0%
+18:19:24 INFO: 9♣ 6♥  heads-up: BTN opens 2.5bb, BB calls | flop As Ks 4s: BB CHECK -> BTN BET 200 (2bb)
+          FOLD                100.0%  <- recommended
+          RAISE to 700 (7bb)    0.0%
+          CALL 200              0.0%
+18:19:25 INFO: 8♣ 3♠  folds to hero
+          FOLD    100.0%  <- recommended
+          ALL-IN    0.0%
+/advise (sample, in process) vs slumbot, 500 hands, alternating seats
+     50 hands      1000 mbb/g  [-1,130, 3,130]     160s
+18:19:25 INFO: POST /advise -> 422  no chart for this spot: the SB raised to 2.0bb without being all-in; the tables only answer a jam
+18:19:29 INFO: 5♠ 5♦  heads-up: BTN opens 2.5bb, BB calls | flop 4s 3s 2h: hero first to act
+          CHECK           71.0%  <- recommended
+          BET 200 (2bb)   29.0%
+18:19:29 INFO: 5♠ 5♦  heads-up: BTN opens 2.5bb, BB calls | flop 4s 3s 2h: BB CHECK -> BTN BET 200 (2bb)
+          RAISE to 700 (7bb)  100.0%  <- recommended
+          CALL 200              0.0%
+          FOLD                  0.0%
+18:19:29 INFO: 5♠ 5♦  heads-up: BTN opens 2.5bb, BB calls | flop 4s 3s 2h: BB CHECK -> BTN BET 200 (2bb) -> BB RAISE to 700 (7bb) -> BTN CALL | turn 3h: hero first to act
+          CHECK             94.0%  <- recommended
+          BET 1400 (14bb)    6.0%
+18:19:30 INFO: 5♠ 5♦  heads-up: BTN opens 2.5bb, BB calls | flop 4s 3s 2h: BB CHECK -> BTN BET 200 (2bb) -> BB RAISE to 700 (7bb) -> BTN CALL | turn 3h: BB CHECK -> BTN BET 1400 (14bb)
+          CALL 1500             100.0%  <- recommended
+          RAISE to 4200 (42bb)    0.0%
+          FOLD                    0.0%
+18:19:30 INFO: 5♠ 5♦  river 4s3s2h3h5c: no bet to call, pot 4800 -- hero equity ~100% vs 1 hand from a preflop-continuing range
+          BET 3200 (32bb)  100.0%  <- recommended
+          CHECK              0.0%
+18:19:31 INFO: Q♠ 9♣  folds to hero
+          FOLD    100.0%  <- recommended
+          ALL-IN    0.0%
+18:19:31 INFO: POST /advise -> 422  no chart for this spot: the SB raised to 2.0bb without being all-in; the tables only answer a jam
+18:19:35 INFO: A♣ T♥  heads-up: BTN opens 2.5bb, BB calls | flop Kc 5h 5d: hero first to act
+          CHECK           92.2%  <- recommended
+          BET 200 (2bb)    7.8%
+18:19:36 INFO: A♣ T♥  heads-up: BTN opens 2.5bb, BB calls | flop Kc 5h 5d: BB CHECK -> BTN CHECK | turn 7s: hero first to act
+          CHECK          100.0%  <- recommended
+          BET 400 (4bb)    0.0%
+18:19:36 INFO: A♣ T♥  river Kc5h5d7s9h: no bet to call, pot 400 -- hero equity ~41% vs 1 hand from a preflop-continuing range
+          CHECK            100.0%  <- recommended
+          BET 267 (2.7bb)    0.0%
+18:19:37 INFO: A♥ K♦  folds to hero
+          ALL-IN  100.0%  <- recommended
+          FOLD      0.0%
+18:19:37 INFO: POST /advise -> 422  no chart for this spot: the SB raised to 2.0bb without being all-in; the tables only answer a jam
+18:19:42 INFO: 7♥ 5♠  heads-up: BTN opens 2.5bb, BB calls | flop Jd 9c 5c: hero first to act
+          CHECK          100.0%  <- recommended
+          BET 200 (2bb)    0.0%
+18:19:42 INFO: 7♥ 5♠  heads-up: BTN opens 2.5bb, BB calls | flop Jd 9c 5c: BB CHECK -> BTN CHECK | turn 3h: hero first to act
+          CHECK           58.2%  <- recommended
+          BET 400 (4bb)   41.8%
+18:19:42 INFO: 7♥ 5♠  heads-up: BTN opens 2.5bb, BB calls | flop Jd 9c 5c: BB CHECK -> BTN CHECK | turn 3h: BB CHECK -> BTN BET 400 (4bb)
+          FOLD                  100.0%  <- recommended
+          CALL 200                0.0%
+          RAISE to 1200 (12bb)    0.0%
+18:19:43 INFO: T♥ 7♦  folds to hero
+          FOLD    100.0%  <- recommended
+          ALL-IN    0.0%
+18:19:44 INFO: POST /advise -> 422  no chart for this spot: the SB raised to 2.0bb without being all-in; the tables only answer a jam
+18:19:49 INFO: T♠ 5♦  flop QhQc6h: no bet to call, pot 400 -- hero equity ~36% vs 1 random hand
+          CHECK            100.0%  <- recommended
+          BET 267 (2.7bb)    0.0%
+18:19:50 INFO: T♠ 5♦  turn QhQc6hJh: no bet to call, pot 400 -- hero equity ~16% vs 1 hand from a preflop-continuing range
+          CHECK            100.0%  <- recommended
+          BET 267 (2.7bb)    0.0%
+18:19:50 INFO: T♠ 5♦  river QhQc6hJh8s: no bet to call, pot 400 -- hero equity ~7% vs 1 hand from a preflop-continuing range
+          CHECK            100.0%  <- recommended
+          BET 267 (2.7bb)    0.0%
+18:19:50 INFO: T♠ 5♦  river QhQc6hJh8s: facing 200 to call into 600 -- hero equity ~13% vs 1 hand from a medium-bet range
+          FOLD                100.0%  <- recommended
+          CALL 200              0.0%
+          RAISE to 600 (6bb)    0.0%
+18:19:51 INFO: J♣ 7♥  folds to hero
+          FOLD    100.0%  <- recommended
+          ALL-IN    0.0%
+18:19:52 INFO: 8♠ 4♠  folds to hero
+          FOLD    100.0%  <- recommended
+          ALL-IN    0.0%
+18:19:53 INFO: POST /advise -> 422  no chart for this spot: the SB raised to 2.0bb without being all-in; the tables only answer a jam
+18:19:56 INFO: Q♥ 8♣  heads-up: BTN opens 2.5bb, BB calls | flop Qs Td 2h: hero first to act
+          CHECK           99.9%  <- recommended
+          BET 200 (2bb)    0.1%
+18:19:56 INFO: Q♥ 8♣  heads-up: BTN opens 2.5bb, BB calls | flop Qs Td 2h: BB CHECK -> BTN CHECK | turn 7s: hero first to act
+          BET 400 (4bb)  100.0%  <- recommended
+          CHECK            0.0%
+18:19:57 INFO: T♠ 2♣  folds to hero
+          FOLD    100.0%  <- recommended
+          ALL-IN    0.0%
+18:19:57 INFO: POST /advise -> 422  no chart for this spot: the SB raised to 2.0bb without being all-in; the tables only answer a jam
+18:20:02 INFO: 6♠ 6♦  heads-up: BTN opens 2.5bb, BB calls | flop Td 9c 8d: hero first to act
+          CHECK           98.5%  <- recommended
+          BET 200 (2bb)    1.5%
+18:20:04 INFO: 6♠ 6♦  heads-up: BTN opens 2.5bb, BB calls | flop Td 9c 8d: BB CHECK -> BTN BET 200 (2bb)
+          CALL 200             95.0%  <- recommended
+          FOLD                  4.9%
+          RAISE to 700 (7bb)    0.1%
+18:20:04 INFO: 6♠ 6♦  heads-up: BTN opens 2.5bb, BB calls | flop Td 9c 8d: BB CHECK -> BTN BET 200 (2bb) -> BB CALL | turn Qc: hero first to act
+          CHECK  100.0%  <- recommended
+18:20:05 INFO: 6♠ 6♦  river Td9c8dQc9s: no bet to call, pot 800 -- hero equity ~41% vs 1 hand from a preflop-continuing range
+          CHECK            100.0%  <- recommended
+          BET 533 (5.3bb)    0.0%
+18:20:05 INFO: 6♠ 6♦  river Td9c8dQc9s: facing 800 to call into 1600 -- hero equity ~45% vs 1 hand from a large-bet range
+          CALL 800              100.0%  <- recommended
+          FOLD                    0.0%
+          RAISE to 2400 (24bb)    0.0%
+18:20:06 INFO: Q♥ 4♥  folds to hero
+          FOLD    100.0%  <- recommended
+          ALL-IN    0.0%
+18:20:06 INFO: POST /advise -> 422  no chart for this spot: the SB raised to 2.0bb without being all-in; the tables only answer a jam
+18:20:10 INFO: 5♥ 4♥  flop 9d6d2d: no bet to call, pot 400 -- hero equity ~26% vs 1 random hand
+          CHECK            100.0%  <- recommended
+          BET 267 (2.7bb)    0.0%
+18:20:10 INFO: 5♥ 4♥  flop 9d6d2d: facing 200 to call into 600 -- hero equity ~26% vs 1 random hand
+          FOLD                100.0%  <- recommended
+          CALL 200              0.0%
+          RAISE to 600 (6bb)    0.0%
+18:20:10 INFO: 7♥ 5♣  folds to hero
+          FOLD    100.0%  <- recommended
+          ALL-IN    0.0%
+18:20:11 INFO: POST /advise -> 422  no chart for this spot: the SB raised to 2.0bb without being all-in; the tables only answer a jam
+18:20:16 INFO: A♠ 8♣  heads-up: BTN opens 2.5bb, BB calls | flop Qh 9h 6c: hero first to act
+          CHECK           99.7%  <- recommended
+          BET 200 (2bb)    0.3%
+18:20:16 INFO: A♠ 8♣  heads-up: BTN opens 2.5bb, BB calls | flop Qh 9h 6c: BB CHECK -> BTN CHECK | turn Ac: hero first to act
+          BET 400 (4bb)   85.8%  <- recommended
+          CHECK           14.2%
+18:20:17 INFO: A♠ 8♣  river Qh9h6cAcTc: no bet to call, pot 1200 -- hero equity ~67% vs 1 hand from a preflop-continuing range
+          CHECK          100.0%  <- recommended
+          BET 800 (8bb)    0.0%
+18:20:17 INFO: A♠ 8♣  river Qh9h6cAcTc: facing 600 to call into 1800 -- hero equity ~43% vs 1 hand from a medium-bet range
+          CALL 600              100.0%  <- recommended
+          FOLD                    0.0%
+          RAISE to 1800 (18bb)    0.0%
+18:20:18 INFO: J♠ 6♥  folds to hero
+          FOLD    100.0%  <- recommended
+          ALL-IN    0.0%
+18:20:18 INFO: POST /advise -> 422  no chart for this spot: the SB raised to 2.0bb without being all-in; the tables only answer a jam
+18:20:23 INFO: A♦ 8♦  heads-up: BTN opens 2.5bb, BB calls | flop Ks Tc 5d: hero first to act
+          CHECK          100.0%  <- recommended
+          BET 200 (2bb)    0.0%
+18:20:24 INFO: A♦ 8♦  heads-up: BTN opens 2.5bb, BB calls | flop Ks Tc 5d: BB CHECK -> BTN BET 200 (2bb)
+          CALL 200             93.8%  <- recommended
+          RAISE to 700 (7bb)    6.2%
+          FOLD                  0.0%
